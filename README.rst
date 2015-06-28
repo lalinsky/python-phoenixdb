@@ -25,6 +25,12 @@ Running the DB API 2.0 compliance test suite::
     export PHOENIXDB_TEST_URL=http://localhost:8765/
     nosetests
 
+If you need a Phoenix server for experimenting, you can get one running quickly using Vagrant, Ansible and VirtualBox::
+
+    git clone https://bitbucket.org/lalinsky/ansible-hadoop.git
+    cd ansible-hadoop
+    vagrant up
+
 Things to do:
 
 * More testing.
