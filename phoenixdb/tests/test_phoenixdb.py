@@ -54,3 +54,13 @@ class PhoenixDatabaseAPI20Test(dbapi20.DatabaseAPI20Test):
         con.readonly = False
         self.assertFalse(con.readonly)
         con.close()
+
+    def test_iter(self):
+        # https://www.python.org/dev/peps/pep-0249/#iter
+        con = self._connect()
+        try:
+            cur = con.cursor()
+            if hasattr(cur,'__iter__'):
+                self.assertIs(cur,iter(cur))
+        finally:
+            con.close()
