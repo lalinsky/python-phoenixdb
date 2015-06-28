@@ -20,7 +20,7 @@ Example usage::
         c.execute("SELECT * FROM test")
         print c.fetchall()
 
-You can also use the database from a Python-based Command-line shell::
+You can also use the database from a Python-based command-line shell::
 
     virtualenv e
     . e/bin/activate
