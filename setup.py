@@ -17,7 +17,7 @@ setup(
     description="Phoenix database interface library",
     author="Lukas Lalinsky",
     author_email="lukas@oxygene.sk",
-    license="BSD",
+    license="Apache-2",
     packages=["phoenixdb"],
     command_options={
         'build_sphinx': {
