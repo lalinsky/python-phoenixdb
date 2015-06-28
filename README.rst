@@ -1,7 +1,7 @@
 python-phoenixdb
 ================
 
-`phoenixdb` is a Python library for accessing the
+*phoenixdb* is a Python library for accessing the
 `Phoenix SQL database <http://phoenix.apache.org/>`_ using the standard
 `DB API 2.0 interface <https://www.python.org/dev/peps/pep-0249/>`_. It implements the
 `Avatica RPC protocol <http://calcite.incubator.apache.org/docs/avatica.html>`_, which is
