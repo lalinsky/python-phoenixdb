@@ -20,6 +20,14 @@ Example usage::
         c.execute("SELECT * FROM test")
         print c.fetchall()
 
+You can also use the database from a Python-based Command-line shell::
+
+    virtualenv e
+    . e/bin/activate
+    pip install -r requirements.txt
+    python setup.py develop
+    ./examples/shell.py http://localhost:8765/
+
 Running the DB API 2.0 compliance test suite::
 
     export PHOENIXDB_TEST_URL=http://localhost:8765/
