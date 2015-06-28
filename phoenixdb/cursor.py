@@ -114,6 +114,11 @@ class Cursor(object):
             elif not frame['done']:
                 raise InternalError('got an empty frame, but the statement is not done yet')
 
+    def _fetch_next_frame(self):
+        offset = self._frame['offset'] + len(self._frame['rows'])
+        frame = self._connection._client.fetch(self._connection._id, self._id, offset=offset)
+        self._set_frame(frame)
+
     def execute(self, operation, parameters=None):
         if self._closed:
             raise ProgrammingError('the cursor is already closed')
@@ -154,10 +159,9 @@ class Cursor(object):
         row = rows[self._pos]
         self._pos += 1
         if self._pos >= len(rows):
-            if self._frame['done']:
-                self._pos = None
-            else:
-                raise NotSupportedError('fetching next frame is not implemented')
+            self._pos = None
+            if not self._frame['done']:
+                self._fetch_next_frame()
         return row
 
     def fetchmany(self, size=None):
@@ -194,4 +198,6 @@ class Cursor(object):
 
     @property
     def rownumber(self):
+        if self._frame is not None and self._pos is not None:
+            return self._frame['offset'] + self._pos
         return self._pos

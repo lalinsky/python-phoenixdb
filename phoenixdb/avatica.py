@@ -296,7 +296,7 @@ class AvaticaClient(object):
         }
         return self._apply(request)['statement']
 
-    def fetch(self, connectionId, statementId, parameterValues, offset=0, fetchMaxRowCount=-1):
+    def fetch(self, connectionId, statementId, parameterValues=None, offset=0, fetchMaxRowCount=-1):
         """Returns a frame of rows.
 
         The frame describes whether there may be another frame. If there is not
