@@ -24,3 +24,10 @@ Running the DB API 2.0 compliance test suite::
 
     export PHOENIXDB_TEST_URL=http://localhost:8765/
     nosetests
+
+Things to do:
+
+* More testing.
+* Better Python type handling.
+* Transaction support. Needs support in the Avatica RPC server first (`CALCITE-767 <https://issues.apache.org/jira/browse/CALCITE-767>`_).
+* More specific exceptions. Also needs proper support in the Avatica RPC server (no ticket yet).
