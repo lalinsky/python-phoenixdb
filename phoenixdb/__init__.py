@@ -1,0 +1,47 @@
+from phoenixdb import errors, types
+from phoenixdb.avatica import AvaticaClient
+from phoenixdb.connection import Connection
+from phoenixdb.errors import *
+from phoenixdb.types import *
+
+__all__ = ['connect', 'apilevel', 'threadsafety', 'paramstyle'] + types.__all__ + errors.__all__
+
+
+apilevel = "2.0"
+"""
+This module supports the `DB API 2.0 interface <https://www.python.org/dev/peps/pep-0249/>`_.
+"""
+
+threadsafety = 1
+"""
+Multiple threads can share the module, but neither connections nor cursors.
+"""
+
+paramstyle = 'qmark'
+"""
+Parmetrized queries should use the question mark as a parameter placeholder.
+
+For example::
+
+ SELECT * FROM table WHERE id = ?
+"""
+
+
+def connect(url, **kwargs):
+    """Connects to a Phoenix query server.
+
+    :param url:
+        URL to the Phoenix query server, e.g. ``http://localhost:8765/``
+
+    :param autocommit:
+        Switch the connection to autocommit mode.
+
+    :param readonly:
+        Switch the connection to readonly mode.
+
+    :returns:
+        :class:`~phoenixdb.connection.Connection` object.
+    """
+    client = AvaticaClient(url)
+    client.connect()
+    return Connection(client, **kwargs)

@@ -1,0 +1,2 @@
+https://lalinsky@bitbucket.org/lalinsky/python-sqlline.git
+nose
