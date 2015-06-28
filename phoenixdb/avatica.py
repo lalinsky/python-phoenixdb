@@ -14,6 +14,7 @@
 
 """Implementation of the JSON-over-HTTP RPC protocol used by Avatica."""
 
+import socket
 import httplib
 import pprint
 import json
@@ -75,7 +76,7 @@ class AvaticaClient(object):
         try:
             self.connection = httplib.HTTPConnection(self.url.hostname, self.url.port)
             self.connection.connect()
-        except httplib.HTTPException as e:
+        except (httplib.HTTPException, socket.error) as e:
             raise OperationalError('Unable to connect to the specified service', e)
 
     def close(self):
