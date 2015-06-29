@@ -37,7 +37,7 @@ Parmetrized queries should use the question mark as a parameter placeholder.
 
 For example::
 
- SELECT * FROM table WHERE id = ?
+ cursor.execute("SELECT * FROM table WHERE id = ?", [my_id])
 """
 
 

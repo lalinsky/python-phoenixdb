@@ -85,8 +85,10 @@ class Cursor(object):
 
     def close(self):
         """Closes the cursor.
-        
         No further operations are allowed once the cursor is closed.
+
+        If the cursor is used in a ``with`` statement, this method will
+        be automatically called at the end of the ``with`` block.
         """
         if self._closed:
             raise ProgrammingError('the cursor is already closed')
@@ -97,6 +99,11 @@ class Cursor(object):
         self._frame = None
         self._pos = None
         self._closed = True
+
+    @property
+    def closed(self):
+        """Read-only attribute specifying if the cursor is closed or not."""
+        return self._closed
 
     @property
     def description(self):
@@ -214,7 +221,7 @@ class Cursor(object):
 
     @property
     def connection(self):
-        """Provides access to the :class:`Connection <phoenixdb.connection.Connection>` object this cursor was created from."""
+        """Read-only attribute providing access to the :class:`Connection <phoenixdb.connection.Connection>` object this cursor was created from."""
         return self._connection
 
 

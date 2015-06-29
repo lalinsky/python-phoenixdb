@@ -50,9 +50,11 @@ class Connection(object):
 
     def close(self):
         """Closes the connection.
-       
         No further operations are allowed, either on the connection or any
-        of its cursors, once the cursor is closed.
+        of its cursors, once the connection is closed.
+
+        If the connection is used in a ``with`` statement, this method will
+        be automatically called at the end of the ``with`` block.
         """
         if self._closed:
             raise ProgrammingError('the connection is already closed')
@@ -63,6 +65,11 @@ class Connection(object):
         self._client.closeConnection(self._id)
         self._client.close()
         self._closed = True
+
+    @property
+    def closed(self):
+        """Read-only attribute specifying if the connection is closed or not."""
+        return self._closed
 
     def commit(self):
         """Commits pending database changes.
@@ -108,7 +115,7 @@ class Connection(object):
 
     @property
     def autocommit(self):
-        """Read/write property for switching the connection's autocommit mode."""
+        """Read/write attribute for switching the connection's autocommit mode."""
         return self._autocommit
 
     @autocommit.setter
@@ -120,7 +127,7 @@ class Connection(object):
 
     @property
     def readonly(self):
-        """Read/write property for switching the connection's readonly mode."""
+        """Read/write attribute for switching the connection's readonly mode."""
         return self._readonly
 
     @readonly.setter
