@@ -52,6 +52,16 @@ class JettyErrorPageParser(HTMLParser):
                 self.message.append(data.strip())
 
 
+def parse_url(url):
+    url = urlparse.urlparse(url)
+    if not url.scheme and not url.netloc and url.path:
+        netloc = url.path
+        if ':' not in netloc:
+            netloc = '{}:8765'.format(netloc)
+        return urlparse.ParseResult('http', netloc, '/', '', '', '')
+    return url
+
+
 class AvaticaClient(object):
     """Client for Avatica's RPC server.
 
@@ -67,7 +77,7 @@ class AvaticaClient(object):
         :param url:
             URL of an Avatica RPC server.
         """
-        self.url = urlparse.urlparse(url)
+        self.url = parse_url(url)
         self.connection = None
 
     def connect(self):
