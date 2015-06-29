@@ -495,7 +495,7 @@ class DatabaseAPI20Test(unittest.TestCase):
             cur.execute('select name from %sbooze' % self.table_prefix)
             r = cur.fetchone()
             self.assertEqual(len(r),1,
-                'cursor.fetchone should have retrieved a row with one columns'
+                'cursor.fetchone should have retrieved a single row'
                 )
             self.assertEqual(r[0],'Victoria Bitter',
                 'cursor.fetchone retrieved incorrect data'
@@ -503,50 +503,6 @@ class DatabaseAPI20Test(unittest.TestCase):
             self.assertEqual(cur.fetchone(),None,
                 'cursor.fetchone should return None if no more rows available'
                 )
-            _failUnless(self,cur.rowcount in (-1,1))
-        finally:
-            con.close()
-
-    def test_next(self):
-        # https://www.python.org/dev/peps/pep-0249/#next
-        con = self._connect()
-        try:
-            cur = con.cursor()
-            if not hasattr(cur,'next'):
-                return
-
-            # cursor.next should raise an Error if called before
-            # executing a select-type query
-            self.assertRaises(self.driver.Error,cur.next)
-
-            # cursor.next should raise an Error if called after
-            # executing a query that cannnot return rows
-            self.executeDDL1(cur)
-            self.assertRaises(self.driver.Error,cur.next)
-
-            # cursor.next should return None if a query retrieves '
-            # no rows
-            cur.execute('select name from %sbooze' % self.table_prefix)
-            self.assertRaises(StopIteration,cur.next)
-            _failUnless(self,cur.rowcount in (-1,0))
-
-            # cursor.next should raise an Error if called after
-            # executing a query that cannnot return rows
-            cur.execute("%s into %sbooze values ('Victoria Bitter')" % (
-                self.insert, self.table_prefix
-                ))
-            self.assertRaises(self.driver.Error,cur.next)
-
-            cur.execute('select name from %sbooze' % self.table_prefix)
-            r = cur.next()
-            self.assertEqual(len(r),1,
-                'cursor.next should have retrieved a row with one column'
-                )
-            self.assertEqual(r[0],'Victoria Bitter',
-                'cursor.next retrieved incorrect data'
-                )
-            # cursor.next should raise StopIteration if no more rows available
-            self.assertRaises(StopIteration,cur.next)
             _failUnless(self,cur.rowcount in (-1,1))
         finally:
             con.close()
