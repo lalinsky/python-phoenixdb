@@ -38,6 +38,20 @@ class Cursor(object):
     You should not construct this object manually, use :meth:`Connection.cursor() <phoenixdb.connection.Connection.cursor>` instead.
     """
 
+    arraysize = 1
+    """
+    Read/write attribute specifying the number of rows to fetch
+    at a time with :meth:`fetchmany`. It defaults to 1 meaning to
+    fetch a single row at a time.
+    """
+
+    itersize = 2000
+    """
+    Read/write attribute specifying the number of rows to fetch
+    from the backend at each network roundtrip during iteration
+    on the cursor. The default is 2000.
+    """
+
     def __init__(self, connection, id=None):
         self._connection = connection
         self._id = id
@@ -45,8 +59,9 @@ class Cursor(object):
         self._frame = None
         self._pos = None
         self._closed = False
-        self.arraysize = 1
-        self.rowcount = -1
+        self.arraysize = self.__class__.arraysize
+        self.itersize = self.__class__.itersize
+        self._updatecount = -1
 
     def __del__(self):
         if not self._connection._closed and not self._closed:
@@ -116,39 +131,45 @@ class Cursor(object):
 
     def _fetch_next_frame(self):
         offset = self._frame['offset'] + len(self._frame['rows'])
-        frame = self._connection._client.fetch(self._connection._id, self._id, offset=offset)
+        frame = self._connection._client.fetch(self._connection._id, self._id,
+            offset=offset, fetchMaxRowCount=self.itersize)
         self._set_frame(frame)
 
     def execute(self, operation, parameters=None):
         if self._closed:
             raise ProgrammingError('the cursor is already closed')
-        self.rowcount = -1
+        self._updatecount = -1
         if parameters is None:
-            results = self._connection._client.prepareAndExecute(self._connection._id, self._id, operation)
+            results = self._connection._client.prepareAndExecute(self._connection._id, self._id,
+                operation, maxRowCount=self.itersize)
             if results:
                 result = results[0]
                 if result['ownStatement']:
                     self._set_id(result['statementId'])
                 self._set_frame(result['firstFrame'])
                 self._signature = result['signature']
-                self.rowcount = result['updateCount']
+                self._updatecount = result['updateCount']
         else:
-            statement = self._connection._client.prepare(self._connection._id, self._id, operation)
+            statement = self._connection._client.prepare(self._connection._id, self._id,
+                operation, maxRowCount=self.itersize)
             self._set_id(statement['id'])
             self._signature = statement['signature']
-            frame = self._connection._client.fetch(self._connection._id, self._id, parameters)
+            frame = self._connection._client.fetch(self._connection._id, self._id,
+                parameters, fetchMaxRowCount=self.itersize)
             self._set_frame(frame)
 
     def executemany(self, operation, seq_of_parameters):
         if self._closed:
             raise ProgrammingError('the cursor is already closed')
-        self.rowcount = -1
+        self._updatecount = -1
         self._set_frame(None)
-        statement = self._connection._client.prepare(self._connection._id, self._id, operation)
+        statement = self._connection._client.prepare(self._connection._id, self._id,
+            operation, maxRowCount=0)
         self._set_id(statement['id'])
         self._signature = statement['signature']
         for parameters in seq_of_parameters:
-            self._connection._client.fetch(self._connection._id, self._id, parameters)
+            self._connection._client.fetch(self._connection._id, self._id,
+                parameters, fetchMaxRowCount=0)
 
     def fetchone(self):
         if self._frame is None:
@@ -196,8 +217,25 @@ class Cursor(object):
         """Provides access to the :class:`Connection <phoenixdb.connection.Connection>` object this cursor was created from."""
         return self._connection
 
+
+    @property
+    def rowcount(self):
+        """Read-only attribute specifying the number of rows affected by
+        the last executed DML statement or -1 if the number cannot be
+        determined. Note that this will always be set to -1 for select
+        queries."""
+        return self._updatecount
+
     @property
     def rownumber(self):
+        """Read-only attribute providing the current 0-based index of the
+        cursor in the result set or ``None`` if the index cannot be
+        determined.
+        
+        The index can be seen as index of the cursor in a sequence
+        (the result set). The next fetch operation will fetch the
+        row indexed by :attr:`rownumber` in that sequence.
+        """
         if self._frame is not None and self._pos is not None:
             return self._frame['offset'] + self._pos
         return self._pos
