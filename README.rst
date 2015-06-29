@@ -28,9 +28,9 @@ You can also use the database from a Python-based command-line shell::
     python setup.py develop
     ./examples/shell.py http://localhost:8765/
 
-Running the DB API 2.0 compliance test suite::
+Running the DB API 2.0 compliance test suite and other unit tests::
 
-    export PHOENIXDB_TEST_URL=http://localhost:8765/
+    export PHOENIXDB_TEST_DB_URL=http://localhost:8765/
     nosetests
 
 If you need a Phoenix server for experimenting, you can get one running quickly using Vagrant, Ansible and VirtualBox::
@@ -44,4 +44,4 @@ Things to do:
 * More testing.
 * Better Python type handling.
 * "Transaction" support, i.e. non-autocommit mode. Needs support in the Avatica RPC server first (`CALCITE-767 <https://issues.apache.org/jira/browse/CALCITE-767>`_).
-* More specific exceptions. Also needs proper support in the Avatica RPC server (no ticket yet).
+* More specific exceptions. Also needs proper support in the Avatica RPC server (`CALCITE-645 <https://issues.apache.org/jira/browse/CALCITE-767>`_).

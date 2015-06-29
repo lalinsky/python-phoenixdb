@@ -17,7 +17,7 @@ import datetime
 
 __all__ = [
     'Date', 'Time', 'Timestamp', 'DateFromTicks', 'TimeFromTicks', 'TimestampFromTicks',
-    'Binary', 'STRING', 'BINARY', 'NUMBER', 'DATETIME', 'ROWID',
+    'Binary', 'STRING', 'BINARY', 'NUMBER', 'DATETIME', 'ROWID', 'BOOLEAN',
 ]
 
 
@@ -86,4 +86,7 @@ DATETIME = ColumnType(['TIME', 'DATE', 'TIMESTAMP', 'UNSIGNED_TIME', 'UNSIGNED_D
 ROWID = ColumnType([])
 """Only implemented for DB API 2.0 compatibility, not used."""
 
-# XXX BOOLEAN, ARRAY
+BOOLEAN = ColumnType(['BOOLEAN'])
+"""Type object that can be used to describe boolean columns. This is a phoenixdb-specific extension."""
+
+# XXX ARRAY
