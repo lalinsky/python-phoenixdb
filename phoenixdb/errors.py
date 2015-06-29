@@ -20,40 +20,68 @@ __all__ = [
 
 
 class Warning(StandardError):
-    pass
+    """Not used by this package, only defined for compatibility
+    with DB API 2.0."""
 
 
 class Error(StandardError):
-    pass
+    """Exception that is the base class of all other error exceptions.
+    You can use this to catch all errors with one single except statement."""
+
+    def __init__(self, message, code=None, sqlstate=None, cause=None):
+        super(StandardError, self).__init__(message, code, sqlstate, cause)
+
+    @property
+    def message(self):
+        return self.args[0]
+
+    @property
+    def code(self):
+        return self.args[1]
+
+    @property
+    def sqlstate(self):
+        return self.args[2]
+
+    @property
+    def cause(self):
+        return self.args[3]
 
 
 class InterfaceError(Error):
-    pass
+    """Exception raised for errors that are related to the database
+    interface rather than the database itself."""
 
 
 class DatabaseError(Error):
-    pass
+    """Exception raised for errors that are related to the database."""
 
 
 class DataError(DatabaseError):
-    pass
+    """Exception raised for errors that are due to problems with the
+    processed data like division by zero, numeric value out of range,
+    etc."""
 
 
 class OperationalError(DatabaseError):
-    pass
+    """Raised for errors that are related to the database's operation and not
+    necessarily under the control of the programmer, e.g. an unexpected
+    disconnect occurs, the data source name is not found, a transaction could
+    not be processed, a memory allocation error occurred during
+    processing, etc."""
 
 
 class IntegrityError(DatabaseError):
-    pass
+    """Raised when the relational integrity of the database is affected, e.g. a foreign key check fails."""
 
 
 class InternalError(DatabaseError):
-    pass
+    """Raised when the database encounters an internal problem."""
 
 
 class ProgrammingError(DatabaseError):
-    pass
+    """Raises for programming errors, e.g. table not found, syntax error, etc."""
 
 
 class NotSupportedError(DatabaseError):
-    pass
+    """Raised when using an API that is not supported by the database."""

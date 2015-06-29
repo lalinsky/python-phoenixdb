@@ -14,6 +14,7 @@
 
 """Implementation of the JSON-over-HTTP RPC protocol used by Avatica."""
 
+import re
 import socket
 import httplib
 import pprint
@@ -21,7 +22,7 @@ import json
 import logging
 import urlparse
 from HTMLParser import HTMLParser
-from phoenixdb.errors import OperationalError, InternalError
+from phoenixdb import errors
 
 __all__ = ['AvaticaClient']
 
@@ -40,9 +41,7 @@ class JettyErrorPageParser(HTMLParser):
         self.path.append(tag)
 
     def handle_endtag(self, tag):
-        top_tag = self.path.pop()
-        if tag != top_tag:
-            raise Exception('mismatched tags')
+        self.path.pop()
 
     def handle_data(self, data):
         if len(self.path) > 2 and self.path[0] == 'html' and self.path[1] == 'body':
@@ -60,6 +59,35 @@ def parse_url(url):
             netloc = '{}:8765'.format(netloc)
         return urlparse.ParseResult('http', netloc, '/', '', '', '')
     return url
+
+
+# Defined in phoenix-core/src/main/java/org/apache/phoenix/exception/SQLExceptionCode.java
+SQLSTATE_ERROR_CLASSES = [
+    ('08', errors.OperationalError), # Connection Exception
+    ('22018', errors.IntegrityError), # Constraint violatioin.
+    ('22', errors.DataError), # Data Exception
+    ('23', errors.IntegrityError), # Constraint Violation
+    ('24', errors.InternalError), # Invalid Cursor State
+    ('25', errors.InternalError), # Invalid Transaction State
+    ('42', errors.ProgrammingError), # Syntax Error or Access Rule Violation
+    ('XLC', errors.OperationalError), # Execution exceptions
+    ('INT', errors.InternalError), # Phoenix internal error
+]
+
+
+def parse_error_page(html):
+    parser = JettyErrorPageParser()
+    parser.feed(html)
+    if parser.title == ['HTTP ERROR: 500']:
+        message = ' '.join(parser.message).strip()
+        match = re.match(r'^([^ ]+): ERROR (\d+) \(([0-9A-Z]{5})\): (.*?)$', message)
+        if match is not None:
+            exception, code, sqlstate, message = match.groups()
+            code = int(code)
+            for prefix, error_class in SQLSTATE_ERROR_CLASSES:
+                if sqlstate.startswith(prefix):
+                    raise error_class(message, code, sqlstate)
+        raise errors.InternalError(message)
 
 
 class AvaticaClient(object):
@@ -87,7 +115,7 @@ class AvaticaClient(object):
             self.connection = httplib.HTTPConnection(self.url.hostname, self.url.port)
             self.connection.connect()
         except (httplib.HTTPException, socket.error) as e:
-            raise OperationalError('Unable to connect to the specified service', e)
+            raise errors.InterfaceError('Unable to connect to the specified service', e)
 
     def close(self):
         """Closes the HTTP connection to the RPC server."""
@@ -99,44 +127,38 @@ class AvaticaClient(object):
                 logger.warning("Error while closing connection", exc_info=True)
             self.connection = None
 
-    def _parse_error_page(self, body):
-        parser = JettyErrorPageParser()
-        parser.feed(body)
-        if parser.title == ['HTTP ERROR: 500']:
-            raise OperationalError(' '.join(parser.message))
-
     def _apply(self, request_data, expected_response_type=None):
         logger.debug("Sending request\n%s", pprint.pformat(request_data))
         try:
             self.connection.request('POST', self.url.path, headers={'request': json.dumps(request_data)})
             response = self.connection.getresponse()
         except httplib.HTTPException as e:
-            raise OperationalError('RPC request failed', e)
+            raise errors.InterfaceError('RPC request failed', cause=e)
 
         response_body = response.read()
 
         if response.status != httplib.OK:
             logger.debug("Received response\n%s", response_body)
             if '<html>' in response_body:
-                self._parse_error_page(response_body)
-            raise OperationalError('RPC request returned invalid status code', response.status)
+                parse_error_page(response_body)
+            raise errors.InterfaceError('RPC request returned invalid status code', response.status)
 
         try:
             response_data = json.loads(response_body)
         except ValueError as e:
             logger.debug("Received response\n%s", response_body)
-            raise InternalError('valid JSON document', e)
+            raise errors.InterfaceError('valid JSON document', cause=e)
 
         logger.debug("Received response\n%s", pprint.pformat(response_data))
 
         if 'response' not in response_data:
-            raise InternalError('missing response type')
+            raise errors.InterfaceError('missing response type')
 
         if expected_response_type is None:
             expected_response_type = request_data['request']
 
         if response_data['response'] != expected_response_type:
-            raise InternalError('unexpected response type', response_data['response'])
+            raise errors.InterfaceError('unexpected response type "{}"'.format(response_data['response']))
 
         return response_data
 

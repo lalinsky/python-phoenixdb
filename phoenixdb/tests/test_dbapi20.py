@@ -84,7 +84,7 @@ class PhoenixDatabaseAPI20Test(dbapi20.DatabaseAPI20Test):
             # no rows
             cur.execute('select name from %sbooze' % self.table_prefix)
             self.assertRaises(StopIteration,cur.next)
-            _failUnless(self,cur.rowcount in (-1,0))
+            self.failUnless(cur.rowcount in (-1,0))
 
             # cursor.next should raise an Error if called after
             # executing a query that cannnot return rows
@@ -103,6 +103,6 @@ class PhoenixDatabaseAPI20Test(dbapi20.DatabaseAPI20Test):
                 )
             # cursor.next should raise StopIteration if no more rows available
             self.assertRaises(StopIteration,cur.next)
-            _failUnless(self,cur.rowcount in (-1,1))
+            self.failUnless(cur.rowcount in (-1,1))
         finally:
             con.close()

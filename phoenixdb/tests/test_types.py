@@ -1,29 +1,9 @@
 import unittest
 import phoenixdb
-from phoenixdb.tests import TEST_DB_URL
+from phoenixdb.tests import DatabaseTestCase
 
-@unittest.skipIf(TEST_DB_URL is None, "these tests require the PHOENIXDB_TEST_DB_URL environment variable set to a clean database")
-class PhoenixTypesTest(unittest.TestCase):
-    
-    def setUp(self):
-        self.conn = phoenixdb.connect(TEST_DB_URL, autocommit=True)
-        self.cleanup_tables = []
 
-    def tearDown(self):
-        self.doCleanups()
-        self.conn.close()
-
-    def addTableCleanup(self, name):
-        def dropTable():
-            with self.conn.cursor() as cursor:
-                cursor.execute("DROP TABLE IF EXISTS {}".format(name))
-        self.addCleanup(dropTable)
-
-    def createTable(self, name, columns):
-        with self.conn.cursor() as cursor:
-            cursor.execute("DROP TABLE IF EXISTS {}".format(name))
-            cursor.execute("CREATE TABLE {} ({})".format(name, columns))
-            self.addTableCleanup(name)
+class TypesTest(DatabaseTestCase):
 
     def checkIntType(self, type_name, min_value, max_value):
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val {}".format(type_name))
@@ -37,8 +17,8 @@ class PhoenixTypesTest(unittest.TestCase):
             cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
             self.assertEqual(cursor.description[1].type_code, phoenixdb.NUMBER)
             self.assertEqual(cursor.fetchall(), [[1, 1], [2, None], [3, 1], [4, None], [5, min_value], [6, max_value]])
-            self.assertRaises(phoenixdb.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, ?)", [min_value - 1])
-            self.assertRaises(phoenixdb.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, ?)", [max_value + 1])
+            self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, ?)", [min_value - 1])
+            self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, ?)", [max_value + 1])
 
     def test_integer(self):
         self.checkIntType("integer", -2147483648, 2147483647)
