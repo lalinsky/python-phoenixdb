@@ -98,5 +98,87 @@ class TypesTest(DatabaseTestCase):
     def test_time(self):
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val time")
         with self.conn.cursor() as cursor:
-            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, '12:00:00')")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, '12')")
             cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (2, NULL)")
+
+    def test_varchar(self):
+        self.createTable("phoenixdb_test_tbl1", "id integer primary key, val varchar")
+        with self.conn.cursor() as cursor:
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, 'abc')")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (2, NULL)")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (3, ?)", ['abc'])
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (4, ?)", [None])
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (5, '')")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (6, ?)", [''])
+            cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
+            self.assertEqual(cursor.fetchall(), [[1, 'abc'], [2, None], [3, 'abc'], [4, None], [5, None], [6, None]])
+
+    @unittest.skip("broken")
+    def test_varchar_very_long(self):
+        self.createTable("phoenixdb_test_tbl1", "id integer primary key, val varchar")
+        with self.conn.cursor() as cursor:
+            value = '1234567890' * 1000
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, ?)", [value])
+            cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
+            self.assertEqual(cursor.fetchall(), [[1, value]])
+
+    def test_varchar_limited(self):
+        self.createTable("phoenixdb_test_tbl1", "id integer primary key, val varchar(2)")
+        with self.conn.cursor() as cursor:
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, 'ab')")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (2, NULL)")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (3, ?)", ['ab'])
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (4, ?)", [None])
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (5, '')")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (6, ?)", [''])
+            cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
+            self.assertEqual(cursor.fetchall(), [[1, 'ab'], [2, None], [3, 'ab'], [4, None], [5, None], [6, None]])
+            self.assertRaises(self.conn.DataError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, 'abc')")
+
+    @unittest.skip("broken")
+    def test_char_null(self):
+        self.createTable("phoenixdb_test_tbl1", "id integer primary key, val char(2)")
+        with self.conn.cursor() as cursor:
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (2, NULL)")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (4, ?)", [None])
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (5, '')")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (6, ?)", [''])
+            cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
+            self.assertEqual(cursor.fetchall(), [[1, 'abc'], [2, None], [3, 'abc'], [4, None], [5, None], [6, None]])
+            self.assertRaises(self.conn.DataError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, 'abc')")
+
+    def test_char(self):
+        self.createTable("phoenixdb_test_tbl1", "id integer primary key, val char(2)")
+        with self.conn.cursor() as cursor:
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, 'ab')")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (2, ?)", ['ab'])
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (3, 'a')")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (4, ?)", ['b'])
+            cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
+            self.assertEqual(cursor.fetchall(), [[1, 'ab'], [2, 'ab'], [3, 'a'], [4, 'b']])
+            self.assertRaises(self.conn.DataError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, 'abc')")
+
+    def test_binary(self):
+        self.createTable("phoenixdb_test_tbl1", "id integer primary key, val binary(2)")
+        with self.conn.cursor() as cursor:
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, 'ab')")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (2, ?)", ['ab'])
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (3, '\x01\x00')")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (4, ?)", ['\x01\x00'])
+            cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
+            self.assertEqual(cursor.fetchall(), [
+                [1, 'ab'.encode('base64').strip()],
+                [2, 'ab'.encode('base64').strip()],
+                [3, '\x01\x00'.encode('base64').strip()],
+                [4, '\x01\x00'.encode('base64').strip()],
+            ])
+
+    @unittest.skip("broken")
+    def test_binary2(self):
+        self.createTable("phoenixdb_test_tbl1", "id integer primary key, val binary(2)")
+        with self.conn.cursor() as cursor:
+            value = ''
+            for i in range(256):
+                value += chr(i)
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, ?)", [phoenixdb.Binary(value)])
+            self.assertEqual(cursor.fetchall(), [[1, value.encode('base64').strip()]])

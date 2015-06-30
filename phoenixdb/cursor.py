@@ -12,15 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import json
-import pprint
-import urllib3
 import logging
-import uuid
-import weakref
 import collections
-from phoenixdb import errors
 from phoenixdb.errors import OperationalError, NotSupportedError, ProgrammingError
 
 __all__ = ['Cursor', 'ColumnDescription']
