@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 cmdclass = {}
 
@@ -8,17 +8,24 @@ try:
 except ImportError:
     pass
 
+def readme():
+    with open('README.rst') as f:
+        return f.read()
+
 version = "0.1"
 
 setup(
     name="phoenixdb",
     version=version,
-    cmdclass=cmdclass,
     description="Phoenix database interface library",
+    long_description=readme(),
     author="Lukas Lalinsky",
     author_email="lukas@oxygene.sk",
-    license="Apache-2",
-    packages=["phoenixdb"],
+    url="https://bitbucket.org/lalinsky/python-phoenixdb",
+    license="Apache 2",
+    packages=find_packages(),
+    include_package_data=True,
+    cmdclass=cmdclass,
     command_options={
         'build_sphinx': {
             'version': ('setup.py', version),
