@@ -1,2 +1,2 @@
-https://bitbucket.org/lalinsky/python-sqlline.git
+-e git+https://bitbucket.org/lalinsky/python-sqlline.git#egg=sqlline
 nose
