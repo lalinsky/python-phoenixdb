@@ -130,7 +130,7 @@ class TypesTest(DatabaseTestCase):
             cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
             self.assertEqual(cursor.fetchall(), [[1, 'abc'], [2, None], [3, 'abc'], [4, None], [5, None], [6, None]])
 
-    @unittest.skip("broken")
+    @unittest.skip("https://issues.apache.org/jira/browse/CALCITE-780")
     def test_varchar_very_long(self):
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val varchar")
         with self.conn.cursor() as cursor:
@@ -184,13 +184,13 @@ class TypesTest(DatabaseTestCase):
             cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (4, ?)", ['\x01\x00'])
             cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
             self.assertEqual(cursor.fetchall(), [
-                [1, 'ab'.encode('base64').strip()],
-                [2, 'ab'.encode('base64').strip()],
-                [3, '\x01\x00'.encode('base64').strip()],
-                [4, '\x01\x00'.encode('base64').strip()],
+                [1, 'ab'],
+                [2, 'ab'],
+                [3, '\x01\x00'],
+                [4, '\x01\x00'],
             ])
 
-    @unittest.skip("broken")
+    @unittest.skip("https://issues.apache.org/jira/browse/CALCITE-781")
     def test_binary2(self):
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val binary(2)")
         with self.conn.cursor() as cursor:

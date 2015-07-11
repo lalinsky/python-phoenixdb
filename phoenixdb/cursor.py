@@ -14,6 +14,7 @@
 
 import logging
 import collections
+import base64
 from decimal import Decimal
 from phoenixdb.errors import OperationalError, NotSupportedError, ProgrammingError
 
@@ -134,6 +135,8 @@ class Cursor(object):
                 self._data_types.append((i, Decimal))
             elif column['columnClassName'] == 'java.lang.Float' or column['columnClassName'] == 'java.lang.Double':
                 self._data_types.append((i, float))
+            elif column['type']['name'] == 'BINARY':
+                self._data_types.append((i, base64.b64decode))
 
     def _set_frame(self, frame):
         self._frame = frame
