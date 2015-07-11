@@ -21,6 +21,7 @@ import pprint
 import json
 import logging
 import urlparse
+from decimal import Decimal
 from HTMLParser import HTMLParser
 from phoenixdb import errors
 
@@ -138,12 +139,24 @@ class AvaticaClient(object):
     def _apply(self, request_data, expected_response_type=None):
         logger.debug("Sending request\n%s", pprint.pformat(request_data))
 
+        class FakeFloat(float):
+            # XXX there has to be a better way to do this
+            def __init__(self, value):
+                self.value = value
+            def __repr__(self):
+                return str(self.value)
+
+        def default(obj):
+            if isinstance(obj, Decimal):
+                return FakeFloat(obj)
+            raise TypeError
+
         if self.version >= AVATICA_1_4_0_INCUBATING:
-            body = json.dumps(request_data)
+            body = json.dumps(request_data, default=default)
             headers = {'content-type': 'application/json'}
         else:
             body = None
-            headers = {'request': json.dumps(request_data)}
+            headers = {'request': json.dumps(request_data, default=default)}
 
         try:
             self.connection.request('POST', self.url.path, body=body, headers=headers)
@@ -159,8 +172,9 @@ class AvaticaClient(object):
                 parse_error_page(response_body)
             raise errors.InterfaceError('RPC request returned invalid status code', response.status)
 
+        noop = lambda x: x
         try:
-            response_data = json.loads(response_body)
+            response_data = json.loads(response_body, parse_float=noop)
         except ValueError as e:
             logger.debug("Received response\n%s", response_body)
             raise errors.InterfaceError('valid JSON document', cause=e)

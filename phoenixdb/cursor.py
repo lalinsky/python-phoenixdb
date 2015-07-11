@@ -14,6 +14,7 @@
 
 import logging
 import collections
+from decimal import Decimal
 from phoenixdb.errors import OperationalError, NotSupportedError, ProgrammingError
 
 __all__ = ['Cursor', 'ColumnDescription']
@@ -49,6 +50,7 @@ class Cursor(object):
         self._connection = connection
         self._id = id
         self._signature = None
+        self._data_types = []
         self._frame = None
         self._pos = None
         self._closed = False
@@ -89,6 +91,7 @@ class Cursor(object):
             self._connection._client.closeStatement(self._connection._id, self._id)
             self._id = None
         self._signature = None
+        self._data_types = []
         self._frame = None
         self._pos = None
         self._closed = True
@@ -120,6 +123,18 @@ class Cursor(object):
             self._connection._client.closeStatement(self._connection._id, self._id)
         self._id = id
 
+    def _set_signature(self, signature):
+        self._signature = signature
+        self._data_types = []
+        if signature is None:
+            return
+        identity = lambda value: value
+        for i, column in enumerate(signature['columns']):
+            if column['columnClassName'] == 'java.math.BigDecimal':
+                self._data_types.append((i, Decimal))
+            elif column['columnClassName'] == 'java.lang.Float' or column['columnClassName'] == 'java.lang.Double':
+                self._data_types.append((i, float))
+
     def _set_frame(self, frame):
         self._frame = frame
         self._pos = None
@@ -146,14 +161,14 @@ class Cursor(object):
                 result = results[0]
                 if result['ownStatement']:
                     self._set_id(result['statementId'])
+                self._set_signature(result['signature'])
                 self._set_frame(result['firstFrame'])
-                self._signature = result['signature']
                 self._updatecount = result['updateCount']
         else:
             statement = self._connection._client.prepare(self._connection._id, self._id,
                 operation, maxRowCount=self.itersize)
             self._set_id(statement['id'])
-            self._signature = statement['signature']
+            self._set_signature(statement['signature'])
             frame = self._connection._client.fetch(self._connection._id, self._id,
                 parameters, fetchMaxRowCount=self.itersize)
             self._set_frame(frame)
@@ -183,6 +198,10 @@ class Cursor(object):
             self._pos = None
             if not self._frame['done']:
                 self._fetch_next_frame()
+        for i, data_type in self._data_types:
+            value = row[i]
+            if value is not None:
+                row[i] = data_type(value)
         return row
 
     def fetchmany(self, size=None):

@@ -1,5 +1,6 @@
 import unittest
 import phoenixdb
+from decimal import Decimal
 from phoenixdb.tests import DatabaseTestCase
 
 
@@ -77,9 +78,25 @@ class TypesTest(DatabaseTestCase):
     def test_unsigned_double(self):
         self.checkFloatType("unsigned_double", 0, 1.7976931348623158E+308)
 
-    @unittest.skip("not implemented")
     def test_decimal(self):
-        assert False
+        self.createTable("phoenixdb_test_tbl1", "id integer primary key, val decimal(8,3)")
+        with self.conn.cursor() as cursor:
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, 33333.333)")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (2, NULL)")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (3, ?)", [33333.333])
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (4, ?)", [Decimal('33333.333')])
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (5, ?)", [None])
+            cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
+            self.assertEqual(cursor.description[1].type_code, phoenixdb.NUMBER)
+            rows = cursor.fetchall()
+            self.assertEqual([r[0] for r in rows], [1, 2, 3, 4, 5])
+            self.assertEqual(rows[0][1], Decimal('33333.333'))
+            self.assertEqual(rows[1][1], None)
+            self.assertEqual(rows[2][1], Decimal('33333.333'))
+            self.assertEqual(rows[3][1], Decimal('33333.333'))
+            self.assertEqual(rows[4][1], None)
+            self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, ?)", [Decimal('1234567890')])
+            self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (101, ?)", [Decimal('123456.789')])
 
     def test_boolean(self):
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val boolean")
