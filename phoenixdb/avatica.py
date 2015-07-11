@@ -90,6 +90,11 @@ def parse_error_page(html):
         raise errors.InternalError(message)
 
 
+AVATICA_1_2_0_INCUBATING = (1, 2, 0, 'incubating')
+AVATICA_1_3_0_INCUBATING = (1, 3, 0, 'incubating')
+AVATICA_1_4_0_INCUBATING = (1, 4, 0, 'incubating')
+
+
 class AvaticaClient(object):
     """Client for Avatica's RPC server.
 
@@ -99,13 +104,16 @@ class AvaticaClient(object):
     to a server using :func:`phoenixdb.connect`.
     """
 
-    def __init__(self, url):
+    def __init__(self, url, version=None):
         """Constructs a new client object.
         
         :param url:
             URL of an Avatica RPC server.
+        :param version:
+            Version of the Avarica RPC server.
         """
         self.url = parse_url(url)
+        self.version = version or AVATICA_1_2_0_INCUBATING
         self.connection = None
 
     def connect(self):
@@ -129,8 +137,16 @@ class AvaticaClient(object):
 
     def _apply(self, request_data, expected_response_type=None):
         logger.debug("Sending request\n%s", pprint.pformat(request_data))
+
+        if self.version >= AVATICA_1_4_0_INCUBATING:
+            body = json.dumps(request_data)
+            headers = {'content-type': 'application/json'}
+        else:
+            body = None
+            headers = {'request': json.dumps(request_data)}
+
         try:
-            self.connection.request('POST', self.url.path, headers={'request': json.dumps(request_data)})
+            self.connection.request('POST', self.url.path, body=body, headers=headers)
             response = self.connection.getresponse()
         except httplib.HTTPException as e:
             raise errors.InterfaceError('RPC request failed', cause=e)
@@ -295,10 +311,11 @@ class AvaticaClient(object):
         request = {
             'request': 'prepareAndExecute',
             'connectionId': connectionId,
-#            'statementId': statement_id,
             'sql': sql,
             'maxRowCount': maxRowCount,
         }
+        if self.version >= AVATICA_1_4_0_INCUBATING:
+            request['statementId'] = statementId
         return self._apply(request, 'Service$ExecuteResponse')['results']
 
     def prepare(self, connectionId, statementId, sql, maxRowCount=-1):
@@ -322,10 +339,11 @@ class AvaticaClient(object):
         request = {
             'request': 'prepare',
             'connectionId': connectionId,
-#            'statementId': statementId,
             'sql': sql,
             'maxRowCount': maxRowCount,
         }
+        if self.version >= AVATICA_1_4_0_INCUBATING:
+            request['statementId'] = statementId
         return self._apply(request)['statement']
 
     def fetch(self, connectionId, statementId, parameterValues=None, offset=0, fetchMaxRowCount=-1):
