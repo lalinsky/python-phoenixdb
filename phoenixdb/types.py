@@ -14,6 +14,7 @@
 
 import time
 import datetime
+import base64
 
 __all__ = [
     'Date', 'Time', 'Timestamp', 'DateFromTicks', 'TimeFromTicks', 'TimestampFromTicks',
@@ -51,9 +52,15 @@ def TimestampFromTicks(ticks):
     return Timestamp(*time.localtime(ticks)[:6])
 
 
-def Binary(string):
+def Binary(value):
     """Constructs an object capable of holding a binary (long) string value."""
-    return string
+    if isinstance(value, _BinaryString):
+        return value
+    return _BinaryString(base64.b64encode(value))
+
+
+class _BinaryString(str):
+    pass
 
 
 class ColumnType(object):

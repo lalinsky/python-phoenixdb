@@ -2,6 +2,7 @@ import unittest
 import phoenixdb
 from decimal import Decimal
 from phoenixdb.tests import DatabaseTestCase
+from phoenixdb.avatica import AVATICA_1_2_0, AVATICA_1_3_0, AVATICA_1_4_0
 
 
 class TypesTest(DatabaseTestCase):
@@ -18,8 +19,10 @@ class TypesTest(DatabaseTestCase):
             cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
             self.assertEqual(cursor.description[1].type_code, phoenixdb.NUMBER)
             self.assertEqual(cursor.fetchall(), [[1, 1], [2, None], [3, 1], [4, None], [5, min_value], [6, max_value]])
-            self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, ?)", [min_value - 1])
-            self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, ?)", [max_value + 1])
+            self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, {})".format(min_value - 1))
+            self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, {})".format(max_value + 1))
+            #self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, ?)", [min_value - 1])
+            #self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, ?)", [max_value + 1])
 
     def test_integer(self):
         self.checkIntType("integer", -2147483648, 2147483647)
@@ -36,7 +39,6 @@ class TypesTest(DatabaseTestCase):
     def test_tinyint(self):
         self.checkIntType("tinyint", -128, 127)
 
-    @unittest.skip("https://issues.apache.org/jira/browse/PHOENIX-2082")
     def test_unsigned_tinyint(self):
         self.checkIntType("unsigned_tinyint", 0, 127)
 
@@ -130,7 +132,6 @@ class TypesTest(DatabaseTestCase):
             cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
             self.assertEqual(cursor.fetchall(), [[1, 'abc'], [2, None], [3, 'abc'], [4, None], [5, None], [6, None]])
 
-    @unittest.skip("https://issues.apache.org/jira/browse/CALCITE-780")
     def test_varchar_very_long(self):
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val varchar")
         with self.conn.cursor() as cursor:
@@ -179,9 +180,9 @@ class TypesTest(DatabaseTestCase):
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val binary(2)")
         with self.conn.cursor() as cursor:
             cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, 'ab')")
-            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (2, ?)", ['ab'])
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (2, ?)", [phoenixdb.Binary('ab')])
             cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (3, '\x01\x00')")
-            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (4, ?)", ['\x01\x00'])
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (4, ?)", [phoenixdb.Binary('\x01\x00')])
             cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
             self.assertEqual(cursor.fetchall(), [
                 [1, 'ab'],
@@ -190,12 +191,14 @@ class TypesTest(DatabaseTestCase):
                 [4, '\x01\x00'],
             ])
 
-    @unittest.skip("https://issues.apache.org/jira/browse/CALCITE-781")
-    def test_binary2(self):
-        self.createTable("phoenixdb_test_tbl1", "id integer primary key, val binary(2)")
+    def test_binary_all_bytes(self):
+        if self.conn._client.version < AVATICA_1_4_0:
+            raise unittest.SkipTest('binary strings only work with Calcite >= 1.4.0')
+        self.createTable("phoenixdb_test_tbl1", "id integer primary key, val binary(256)")
         with self.conn.cursor() as cursor:
             value = ''
             for i in range(256):
                 value += chr(i)
             cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, ?)", [phoenixdb.Binary(value)])
-            self.assertEqual(cursor.fetchall(), [[1, value.encode('base64').strip()]])
+            cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
+            self.assertEqual(cursor.fetchall(), [[1, value]])

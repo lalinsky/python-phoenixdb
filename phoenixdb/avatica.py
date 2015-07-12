@@ -91,9 +91,9 @@ def parse_error_page(html):
         raise errors.InternalError(message)
 
 
-AVATICA_1_2_0_INCUBATING = (1, 2, 0, 'incubating')
-AVATICA_1_3_0_INCUBATING = (1, 3, 0, 'incubating')
-AVATICA_1_4_0_INCUBATING = (1, 4, 0, 'incubating')
+AVATICA_1_2_0 = (1, 2, 0)
+AVATICA_1_3_0 = (1, 3, 0)
+AVATICA_1_4_0 = (1, 4, 0)
 
 
 class AvaticaClient(object):
@@ -114,7 +114,18 @@ class AvaticaClient(object):
             Version of the Avarica RPC server.
         """
         self.url = parse_url(url)
-        self.version = version or AVATICA_1_2_0_INCUBATING
+        if version is not None:
+            self.version = version
+        else:
+            self.version = AVATICA_1_2_0
+            query = urlparse.parse_qs(self.url.query)
+            for v in query.get('v', []):
+                if v in ('1.2.0', '1.2'):
+                    self.version = AVATICA_1_2_0
+                elif v in ('1.3.0', '1.3'):
+                    self.version = AVATICA_1_3_0
+                elif v in ('1.4.0', '1.4'):
+                    self.version = AVATICA_1_4_0
         self.connection = None
 
     def connect(self):
@@ -151,13 +162,14 @@ class AvaticaClient(object):
                 return FakeFloat(obj)
             raise TypeError
 
-        if self.version >= AVATICA_1_4_0_INCUBATING:
+        if self.version >= AVATICA_1_4_0:
             body = json.dumps(request_data, default=default)
             headers = {'content-type': 'application/json'}
         else:
             body = None
             headers = {'request': json.dumps(request_data, default=default)}
 
+        logger.debug("POST %s %r %r", self.url.path, body, headers)
         try:
             self.connection.request('POST', self.url.path, body=body, headers=headers)
             response = self.connection.getresponse()
@@ -328,7 +340,7 @@ class AvaticaClient(object):
             'sql': sql,
             'maxRowCount': maxRowCount,
         }
-        if self.version >= AVATICA_1_4_0_INCUBATING:
+        if self.version >= AVATICA_1_4_0:
             request['statementId'] = statementId
         return self._apply(request, 'Service$ExecuteResponse')['results']
 
@@ -356,8 +368,8 @@ class AvaticaClient(object):
             'sql': sql,
             'maxRowCount': maxRowCount,
         }
-        if self.version >= AVATICA_1_4_0_INCUBATING:
-            request['statementId'] = statementId
+        #if self.version >= AVATICA_1_4_0:
+        #    request['statementId'] = statementId
         return self._apply(request)['statement']
 
     def fetch(self, connectionId, statementId, parameterValues=None, offset=0, fetchMaxRowCount=-1):
@@ -389,9 +401,13 @@ class AvaticaClient(object):
             'request': 'fetch',
             'connectionId': connectionId,
             'statementId': statementId,
-            'parameterValues': parameterValues,
             'offset': offset,
             'fetchMaxRowCount': fetchMaxRowCount,
         }
+        if self.version < AVATICA_1_3_0:
+            # XXX won't work for all types, but oh well...
+            request['parameterValues'] = [v['value'] for v in parameterValues]
+        else:
+            request['parameterValues'] = parameterValues
         return self._apply(request)['frame']
 

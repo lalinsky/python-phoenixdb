@@ -16,6 +16,7 @@ import logging
 import collections
 import base64
 from decimal import Decimal
+from phoenixdb.types import Binary
 from phoenixdb.errors import OperationalError, NotSupportedError, ProgrammingError
 
 __all__ = ['Cursor', 'ColumnDescription']
@@ -51,7 +52,7 @@ class Cursor(object):
         self._connection = connection
         self._id = id
         self._signature = None
-        self._data_types = []
+        self._column_data_types = []
         self._frame = None
         self._pos = None
         self._closed = False
@@ -92,7 +93,7 @@ class Cursor(object):
             self._connection._client.closeStatement(self._connection._id, self._id)
             self._id = None
         self._signature = None
-        self._data_types = []
+        self._column_data_types = []
         self._frame = None
         self._pos = None
         self._closed = True
@@ -126,17 +127,53 @@ class Cursor(object):
 
     def _set_signature(self, signature):
         self._signature = signature
-        self._data_types = []
+        self._column_data_types = []
+        self._parameter_data_types = []
         if signature is None:
             return
         identity = lambda value: value
         for i, column in enumerate(signature['columns']):
             if column['columnClassName'] == 'java.math.BigDecimal':
-                self._data_types.append((i, Decimal))
+                self._column_data_types.append((i, Decimal))
             elif column['columnClassName'] == 'java.lang.Float' or column['columnClassName'] == 'java.lang.Double':
-                self._data_types.append((i, float))
+                self._column_data_types.append((i, float))
             elif column['type']['name'] == 'BINARY':
-                self._data_types.append((i, base64.b64decode))
+                self._column_data_types.append((i, base64.b64decode))
+        for parameter in signature['parameters']:
+            if parameter['className'] == 'java.math.BigDecimal':
+                self._parameter_data_types.append(('NUMBER', None))
+            elif parameter['className'] == 'java.lang.Float':
+                self._parameter_data_types.append(('FLOAT', None))
+            elif parameter['className'] == 'java.lang.Double':
+                self._parameter_data_types.append(('DOUBLE', None))
+            elif parameter['className'] == 'java.lang.Long':
+                self._parameter_data_types.append(('LONG', None))
+            elif parameter['className'] == 'java.lang.Integer':
+                self._parameter_data_types.append(('INTEGER', None))
+            elif parameter['className'] == 'java.lang.Short':
+                self._parameter_data_types.append(('SHORT', None))
+            elif parameter['className'] == 'java.lang.Byte':
+                self._parameter_data_types.append(('BYTE', None))
+            elif parameter['className'] == 'java.lang.Boolean':
+                self._parameter_data_types.append(('BOOLEAN', None))
+            elif parameter['className'] == 'java.lang.String':
+                self._parameter_data_types.append(('STRING', None))
+            elif parameter['className'] == '[B':
+                self._parameter_data_types.append(('BYTE_STRING', Binary))
+            else:
+                self._parameter_data_types.append(('OBJECT', None))
+        print "parameters", self._parameter_data_types, signature
+
+    def _transform_parameters(self, parameters):
+        typed_parameters = []
+        for value, data_type in zip(parameters, self._parameter_data_types):
+            if value is None:
+                typed_parameters.append({'type': 'OBJECT', 'value': None})
+            else:
+                if data_type[1] is not None:
+                    value = data_type[1](value)
+                typed_parameters.append({'type': data_type[0], 'value': value})
+        return typed_parameters
 
     def _set_frame(self, frame):
         self._frame = frame
@@ -158,6 +195,8 @@ class Cursor(object):
             raise ProgrammingError('the cursor is already closed')
         self._updatecount = -1
         if parameters is None:
+            if self._id is None:
+                self._set_id(self._connection._client.createStatement(self._connection._id))
             results = self._connection._client.prepareAndExecute(self._connection._id, self._id,
                 operation, maxRowCount=self.itersize)
             if results:
@@ -173,7 +212,8 @@ class Cursor(object):
             self._set_id(statement['id'])
             self._set_signature(statement['signature'])
             frame = self._connection._client.fetch(self._connection._id, self._id,
-                parameters, fetchMaxRowCount=self.itersize)
+                self._transform_parameters(parameters),
+                fetchMaxRowCount=self.itersize)
             self._set_frame(frame)
 
     def executemany(self, operation, seq_of_parameters):
@@ -184,10 +224,11 @@ class Cursor(object):
         statement = self._connection._client.prepare(self._connection._id, self._id,
             operation, maxRowCount=0)
         self._set_id(statement['id'])
-        self._signature = statement['signature']
+        self._set_signature(statement['signature'])
         for parameters in seq_of_parameters:
             self._connection._client.fetch(self._connection._id, self._id,
-                parameters, fetchMaxRowCount=0)
+                self._transform_parameters(parameters),
+                fetchMaxRowCount=0)
 
     def fetchone(self):
         if self._frame is None:
@@ -201,7 +242,7 @@ class Cursor(object):
             self._pos = None
             if not self._frame['done']:
                 self._fetch_next_frame()
-        for i, data_type in self._data_types:
+        for i, data_type in self._column_data_types:
             value = row[i]
             if value is not None:
                 row[i] = data_type(value)

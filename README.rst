@@ -43,6 +43,4 @@ Known problems:
 
 * "Transaction" support, i.e. non-autocommit mode. Needs support in the Avatica RPC server first. (`CALCITE-767 <https://issues.apache.org/jira/browse/CALCITE-767>`_)
 * Proper exception handling, currently it tries to parse the HTML error page it receives from the server. (`CALCITE-645 <https://issues.apache.org/jira/browse/CALCITE-767>`_)
-* Can't pass long string as parameters. (`CALCITE-780 <https://issues.apache.org/jira/browse/CALCITE-780>`_)
-* Can't use BINARY(n) columns properly. You can insert non-binary data to a BINARY column, but you can't insert arbitrary binary data, just a set of characters that can be encoded in JSON strings. (`CALCITE-781 <https://issues.apache.org/jira/browse/CALCITE-781>`_)
 * Can't use TIME/DATE columns. The server returns incomplete data and expects different format on input and output. (`discussion <http://mail-archives.apache.org/mod_mbox/phoenix-user/201506.mbox/%3CCAGUtLj8HDeq7chOSTz%3DVznB-v79%3DCmJ5%3Dt1N9Bbe4wE_m1%3D3zg%40mail.gmail.com%3E>`_)
