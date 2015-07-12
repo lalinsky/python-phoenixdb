@@ -22,6 +22,7 @@ class TypesTest(DatabaseTestCase):
             self.assertEqual(cursor.fetchall(), [[1, 1], [2, None], [3, 1], [4, None], [5, min_value], [6, max_value]])
             self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, {})".format(min_value - 1))
             self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, {})".format(max_value + 1))
+            # XXX The server silently truncates the values
             #self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, ?)", [min_value - 1])
             #self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, ?)", [max_value + 1])
 
@@ -115,6 +116,7 @@ class TypesTest(DatabaseTestCase):
             self.assertEqual(cursor.fetchall(), [[1, True], [2, False], [3, None], [4, True], [5, False], [6, None]])
 
     def test_time(self):
+        # XXX We should be able to read/write full date with time, not just time
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val time")
         with self.conn.cursor() as cursor:
             cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, '1970-01-01 12:01:02')")
@@ -129,6 +131,82 @@ class TypesTest(DatabaseTestCase):
                 [3, datetime.time(12, 1, 2)],
                 [4, datetime.time(12, 1, 2)],
                 [5, None],
+            ])
+
+    @unittest.skip("https://issues.apache.org/jira/browse/CALCITE-797")
+    def test_time_full(self):
+        self.createTable("phoenixdb_test_tbl1", "id integer primary key, val time")
+        with self.conn.cursor() as cursor:
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, '2015-07-12 13:01:02.123')")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (2, ?)", [datetime.datetime(2015, 7, 12, 13, 1, 2, 123000)])
+            cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
+            self.assertEqual(cursor.fetchall(), [
+                [1, datetime.datetime(2015, 7, 12, 13, 1, 2, 123000)],
+                [2, datetime.datetime(2015, 7, 12, 13, 1, 2, 123000)],
+            ])
+
+    def test_date(self):
+        self.createTable("phoenixdb_test_tbl1", "id integer primary key, val date")
+        with self.conn.cursor() as cursor:
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, '2015-07-12 00:00:00')")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (3, ?)", [phoenixdb.Date(2015, 7, 12)])
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (4, ?)", [datetime.date(2015, 7, 12)])
+            cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
+            self.assertEqual(cursor.fetchall(), [
+                [1, datetime.date(2015, 7, 12)],
+                [3, datetime.date(2015, 7, 12)],
+                [4, datetime.date(2015, 7, 12)],
+            ])
+
+    @unittest.skip("https://issues.apache.org/jira/browse/CALCITE-798")
+    def test_date_full(self):
+        self.createTable("phoenixdb_test_tbl1", "id integer primary key, val date")
+        with self.conn.cursor() as cursor:
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, '2015-07-12 13:01:02.123')")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (2, ?)", [datetime.datetime(2015, 7, 12, 13, 1, 2, 123000)])
+            cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
+            self.assertEqual(cursor.fetchall(), [
+                [1, datetime.datetime(2015, 7, 12, 13, 1, 2, 123000)],
+                [2, datetime.datetime(2015, 7, 12, 13, 1, 2, 123000)],
+            ])
+
+    @unittest.skip("broken")
+    def test_date_null(self):
+        self.createTable("phoenixdb_test_tbl1", "id integer primary key, val date")
+        with self.conn.cursor() as cursor:
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, NULL)")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (2, ?)", [None])
+            cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id") # raises NullPointerException on the server
+            self.assertEqual(cursor.fetchall(), [
+                [1, None],
+                [2, None],
+            ])
+
+    def test_timestamp(self):
+        self.createTable("phoenixdb_test_tbl1", "id integer primary key, val timestamp")
+        with self.conn.cursor() as cursor:
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, '2015-07-12 13:01:02.123')")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (2, NULL)")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (3, ?)", [phoenixdb.Timestamp(2015, 7, 12, 13, 1, 2)])
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (4, ?)", [datetime.datetime(2015, 7, 12, 13, 1, 2, 123000)])
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (5, ?)", [None])
+            cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
+            self.assertEqual(cursor.fetchall(), [
+                [1, datetime.datetime(2015, 7, 12, 13, 1, 2, 123000)],
+                [2, None],
+                [3, datetime.datetime(2015, 7, 12, 13, 1, 2)],
+                [4, datetime.datetime(2015, 7, 12, 13, 1, 2, 123000)],
+                [5, None],
+            ])
+
+    @unittest.skip("https://issues.apache.org/jira/browse/CALCITE-796")
+    def test_timestamp_full(self):
+        self.createTable("phoenixdb_test_tbl1", "id integer primary key, val timestamp")
+        with self.conn.cursor() as cursor:
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, '2015-07-12 13:01:02.123456789')")
+            cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
+            self.assertEqual(cursor.fetchall(), [
+                [1, datetime.datetime(2015, 7, 12, 13, 1, 2, 123456789)],
             ])
 
     def test_varchar(self):

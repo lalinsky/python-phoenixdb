@@ -30,18 +30,32 @@ ColumnDescription = collections.namedtuple('ColumnDescription', 'name type_code 
 
 
 def time_from_java_sql_time(n):
-    microsecond = 1000 * (n % 1000)
-    n /= 1000
-    second = n % 60
-    n /= 60
-    minute = n % 60
-    n /= 60
-    hour = n % 24
-    return datetime.time(hour, minute, second, microsecond)
+    dt = datetime.datetime(1970, 1, 1) + datetime.timedelta(milliseconds=n)
+    return dt.time()
 
 
 def time_to_java_sql_time(t):
     return ((t.hour * 60 + t.minute) * 60 + t.second) * 1000 + t.microsecond / 1000
+
+
+def date_from_java_sql_date(n):
+    return datetime.date(1970, 1, 1) + datetime.timedelta(days=n)
+
+
+def date_to_java_sql_date(d):
+    if isinstance(d, datetime.datetime):
+        d = d.date()
+    td = d - datetime.date(1970, 1, 1)
+    return td.days
+
+
+def datetime_from_java_sql_timestamp(n):
+    return datetime.datetime(1970, 1, 1) + datetime.timedelta(milliseconds=n)
+
+
+def datetime_to_java_sql_timestamp(d):
+    td = d - datetime.datetime(1970, 1, 1)
+    return td.microseconds / 1000 + (td.seconds + td.days * 24 * 3600) * 1000
 
 
 class Cursor(object):
@@ -155,6 +169,10 @@ class Cursor(object):
                 self._column_data_types.append((i, float))
             elif column['columnClassName'] == 'java.sql.Time':
                 self._column_data_types.append((i, time_from_java_sql_time))
+            elif column['columnClassName'] == 'java.sql.Date':
+                self._column_data_types.append((i, date_from_java_sql_date))
+            elif column['columnClassName'] == 'java.sql.Timestamp':
+                self._column_data_types.append((i, datetime_from_java_sql_timestamp))
             elif column['type']['name'] == 'BINARY':
                 self._column_data_types.append((i, base64.b64decode))
         for parameter in signature['parameters']:
@@ -178,6 +196,10 @@ class Cursor(object):
                 self._parameter_data_types.append(('STRING', None))
             elif parameter['className'] == 'java.sql.Time':
                 self._parameter_data_types.append(('JAVA_SQL_TIME', time_to_java_sql_time))
+            elif parameter['className'] == 'java.sql.Date':
+                self._parameter_data_types.append(('JAVA_SQL_DATE', date_to_java_sql_date))
+            elif parameter['className'] == 'java.sql.Timestamp':
+                self._parameter_data_types.append(('JAVA_SQL_TIMESTAMP', datetime_to_java_sql_timestamp))
             elif parameter['className'] == '[B':
                 self._parameter_data_types.append(('BYTE_STRING', Binary))
             else:
