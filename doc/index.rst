@@ -1,7 +1,7 @@
 Welcome to phoenixdb's documentation!
 =====================================
 
-`phoenixdb` is a Python library for accessing the
+``phoenixdb`` is a Python library for accessing the
 `Phoenix SQL database <http://phoenix.apache.org/>`_
 using the
 `remote query server <http://phoenix.apache.org/server.html>`_ introduced
