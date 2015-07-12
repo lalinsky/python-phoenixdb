@@ -14,7 +14,7 @@ Installation
 
 The easiest way to install the library is using `pip <https://pip.pypa.io/en/stable/>`_::
 
-    pip install python-phoenixdb
+    pip install phoenixdb
 
 You can also download the source code from `Bitbucket <https://bitbucket.org/lalinsky/python-phoenixdb/downloads>`_,
 extract the archive and then install it manually::
