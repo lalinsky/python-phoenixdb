@@ -204,7 +204,6 @@ class Cursor(object):
                 self._parameter_data_types.append(('BYTE_STRING', Binary))
             else:
                 self._parameter_data_types.append(('OBJECT', None))
-        print "parameters", self._parameter_data_types, signature
 
     def _transform_parameters(self, parameters):
         typed_parameters = []
