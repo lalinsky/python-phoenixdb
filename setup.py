@@ -17,7 +17,7 @@ version = "0.1"
 setup(
     name="phoenixdb",
     version=version,
-    description="Phoenix database interface library",
+    description="Phoenix database adapter for Python",
     long_description=readme(),
     author="Lukas Lalinsky",
     author_email="lukas@oxygene.sk",
