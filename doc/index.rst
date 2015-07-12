@@ -1,5 +1,5 @@
-Welcome to phoenixdb's documentation!
-=====================================
+Phoenix database adapter for Python
+===================================
 
 ``phoenixdb`` is a Python library for accessing the
 `Phoenix SQL database <http://phoenix.apache.org/>`_
