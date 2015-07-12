@@ -1,4 +1,5 @@
 import unittest
+import datetime
 import phoenixdb
 from decimal import Decimal
 from phoenixdb.tests import DatabaseTestCase
@@ -113,12 +114,22 @@ class TypesTest(DatabaseTestCase):
             self.assertEqual(cursor.description[1].type_code, phoenixdb.BOOLEAN)
             self.assertEqual(cursor.fetchall(), [[1, True], [2, False], [3, None], [4, True], [5, False], [6, None]])
 
-    @unittest.skip("broken")
     def test_time(self):
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val time")
         with self.conn.cursor() as cursor:
-            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, '12')")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, '1970-01-01 12:01:02')")
             cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (2, NULL)")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (3, ?)", [phoenixdb.Time(12, 1, 2)])
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (4, ?)", [datetime.time(12, 1, 2)])
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (5, ?)", [None])
+            cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
+            self.assertEqual(cursor.fetchall(), [
+                [1, datetime.time(12, 1, 2)],
+                [2, None],
+                [3, datetime.time(12, 1, 2)],
+                [4, datetime.time(12, 1, 2)],
+                [5, None],
+            ])
 
     def test_varchar(self):
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val varchar")

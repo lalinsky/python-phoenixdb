@@ -15,6 +15,7 @@
 import logging
 import collections
 import base64
+import datetime
 from decimal import Decimal
 from phoenixdb.types import Binary
 from phoenixdb.errors import OperationalError, NotSupportedError, ProgrammingError
@@ -26,6 +27,21 @@ logger = logging.getLogger(__name__)
 
 ColumnDescription = collections.namedtuple('ColumnDescription', 'name type_code display_size internal_size precision scale null_ok')
 """Named tuple for representing results from :attr:`Cursor.description`."""
+
+
+def time_from_java_sql_time(n):
+    microsecond = 1000 * (n % 1000)
+    n /= 1000
+    second = n % 60
+    n /= 60
+    minute = n % 60
+    n /= 60
+    hour = n % 24
+    return datetime.time(hour, minute, second, microsecond)
+
+
+def time_to_java_sql_time(t):
+    return ((t.hour * 60 + t.minute) * 60 + t.second) * 1000 + t.microsecond / 1000
 
 
 class Cursor(object):
@@ -137,6 +153,8 @@ class Cursor(object):
                 self._column_data_types.append((i, Decimal))
             elif column['columnClassName'] == 'java.lang.Float' or column['columnClassName'] == 'java.lang.Double':
                 self._column_data_types.append((i, float))
+            elif column['columnClassName'] == 'java.sql.Time':
+                self._column_data_types.append((i, time_from_java_sql_time))
             elif column['type']['name'] == 'BINARY':
                 self._column_data_types.append((i, base64.b64decode))
         for parameter in signature['parameters']:
@@ -158,6 +176,8 @@ class Cursor(object):
                 self._parameter_data_types.append(('BOOLEAN', None))
             elif parameter['className'] == 'java.lang.String':
                 self._parameter_data_types.append(('STRING', None))
+            elif parameter['className'] == 'java.sql.Time':
+                self._parameter_data_types.append(('JAVA_SQL_TIME', time_to_java_sql_time))
             elif parameter['className'] == '[B':
                 self._parameter_data_types.append(('BYTE_STRING', Binary))
             else:

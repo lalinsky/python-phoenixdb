@@ -24,17 +24,17 @@ __all__ = [
 
 def Date(year, month, day):
     """Constructs an object holding a date value."""
-    return datetime.date(year, month, day).isoformat()
+    return datetime.date(year, month, day)
 
 
 def Time(hour, minute, second):
     """Constructs an object holding a time value."""
-    return datetime.time(hour, minute, second).isoformat()
+    return datetime.time(hour, minute, second)
 
 
 def Timestamp(year, month, day, hour, minute, second):
     """Constructs an object holding a datetime/timestamp value."""
-    return datetime.datetime(year, month, day, hour, minute, second).isoformat()
+    return datetime.datetime(year, month, day, hour, minute, second)
 
 
 def DateFromTicks(ticks):
