@@ -88,6 +88,8 @@ class TypesTest(DatabaseTestCase):
         self.checkFloatType("unsigned_double", 0, 1.7976931348623158E+308)
 
     def test_decimal(self):
+        if self.conn._client.version < AVATICA_1_4_0:
+            raise unittest.SkipTest('decimal only works correctly with Calcite >= 1.4.0')
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val decimal(8,3)")
         with self.conn.cursor() as cursor:
             cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, 33333.333)")

@@ -117,7 +117,7 @@ class AvaticaClient(object):
         if version is not None:
             self.version = version
         else:
-            self.version = AVATICA_1_2_0
+            self.version = AVATICA_1_3_0
             query = urlparse.parse_qs(self.url.query)
             for v in query.get('v', []):
                 if v in ('1.2.0', '1.2'):
