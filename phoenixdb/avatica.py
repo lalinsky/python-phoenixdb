@@ -19,8 +19,10 @@ import socket
 import httplib
 import pprint
 import json
+import math
 import logging
 import urlparse
+import time
 from decimal import Decimal
 from HTMLParser import HTMLParser
 from phoenixdb import errors
@@ -105,7 +107,7 @@ class AvaticaClient(object):
     to a server using :func:`phoenixdb.connect`.
     """
 
-    def __init__(self, url, version=None):
+    def __init__(self, url, version=None, max_retries=None):
         """Constructs a new client object.
         
         :param url:
@@ -126,6 +128,7 @@ class AvaticaClient(object):
                     self.version = AVATICA_1_3_0
                 elif v in ('1.4.0', '1.4'):
                     self.version = AVATICA_1_4_0
+        self.max_retries = max_retries if max_retries is not None else 3
         self.connection = None
 
     def connect(self):
@@ -146,6 +149,33 @@ class AvaticaClient(object):
             except httplib.HTTPException as e:
                 logger.warning("Error while closing connection", exc_info=True)
             self.connection = None
+
+    def _post_request(self, body, headers):
+        retry_count = self.max_retries
+        while True:
+            logger.debug("POST %s %r %r", self.url.path, body, headers)
+            try:
+                self.connection.request('POST', self.url.path, body=body, headers=headers)
+                response = self.connection.getresponse()
+            except httplib.HTTPException as e:
+                if retry_count > 0:
+                    delay = math.exp(-retry_count)
+                    logger.debug("HTTP protocol error, will retry in %s seconds...", delay, exc_info=True)
+                    self.close()
+                    self.connect()
+                    time.sleep(delay)
+                    retry_count -= 1
+                    continue
+                raise errors.InterfaceError('RPC request failed', cause=e)
+            else:
+                if response.status == httplib.SERVICE_UNAVAILABLE:
+                    if retry_count > 0:
+                        delay = math.exp(-retry_count)
+                        logger.debug("Service unavailable, will retry in %s seconds...", delay, exc_info=True)
+                        time.sleep(delay)
+                        retry_count -= 1
+                        continue
+                return response
 
     def _apply(self, request_data, expected_response_type=None):
         logger.debug("Sending request\n%s", pprint.pformat(request_data))
@@ -169,13 +199,7 @@ class AvaticaClient(object):
             body = None
             headers = {'request': json.dumps(request_data, default=default)}
 
-        logger.debug("POST %s %r %r", self.url.path, body, headers)
-        try:
-            self.connection.request('POST', self.url.path, body=body, headers=headers)
-            response = self.connection.getresponse()
-        except httplib.HTTPException as e:
-            raise errors.InterfaceError('RPC request failed', cause=e)
-
+        response = self._post_request(body, headers)
         response_body = response.read()
 
         if response.status != httplib.OK:

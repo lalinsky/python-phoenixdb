@@ -41,7 +41,7 @@ For example::
 """
 
 
-def connect(url, **kwargs):
+def connect(url, max_retries=None, **kwargs):
     """Connects to a Phoenix query server.
 
     :param url:
@@ -53,9 +53,12 @@ def connect(url, **kwargs):
     :param readonly:
         Switch the connection to readonly mode.
 
+    :param max_retries:
+        The maximum number of retries in case there is a connection error.
+
     :returns:
         :class:`~phoenixdb.connection.Connection` object.
     """
-    client = AvaticaClient(url)
+    client = AvaticaClient(url, max_retries=max_retries)
     client.connect()
     return Connection(client, **kwargs)
