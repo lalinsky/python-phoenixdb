@@ -49,11 +49,11 @@ perl -pi -e 's{^\#?\s*export\s*JAVA_HOME\s*=.*$}{export JAVA_HOME=/usr/lib/jvm/j
 if ! pgrep -f proc_master >/dev/null
 then
 	echo "> Starting HBase"
-	/opt/hbase/bin/start-hbase.sh
+	sudo -u vagrant /opt/hbase/bin/start-hbase.sh
 fi
 
 if ! pgrep -f proc_phoenixserver >/dev/null
 then
 	echo "> Starting Phoenix query server"
-	/opt/phoenix/bin/queryserver.py start
+	sudo -u vagrant /opt/phoenix/bin/queryserver.py start
 fi
