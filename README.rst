@@ -5,7 +5,7 @@ Phoenix database adapter for Python
 `Phoenix SQL database <http://phoenix.apache.org/>`_
 using the
 `remote query server <http://phoenix.apache.org/server.html>`_ introduced
-in Phoenix 4.4.  The library implements the  
+in Phoenix 4.6.  The library implements the  
 standard `DB API 2.0 <https://www.python.org/dev/peps/pep-0249/>`_ interface,
 which should be familiar to most Python programmers.
 
@@ -98,10 +98,10 @@ Known issues
 - You can only use the library in autocommit mode. The native Java Phoenix library also implements batched upserts, which can be committed at once, but this is not exposed over the remote server.
   (`CALCITE-767 <https://issues.apache.org/jira/browse/CALCITE-767>`_)
 - In some cases, generic exceptions are raises, instead of more specific SQL errors. This is because the Avatica server from Calcite currently does not pass errors in a structured format.
-- BINARY, TIME, DATE and TIMESTAMP data types do not work with Phoenix 4.4, which ships with Calcite 1.2.
+- DECIMAL data type do not work properly with Phoenix 4.6, which ships with Calcite 1.3.
   You can use them if you make a custom build of Phoenix with a more recent version of Calcite.
-  (`CALCITE-671 <https://issues.apache.org/jira/browse/CALCITE-671>`_)
-- Requests with more than 16k data will fail on Phoenix 4.4.
+  (`CALCITE-795 <https://issues.apache.org/jira/browse/CALCITE-795>`_)
+- Requests with more than 16k data will fail on Phoenix 4.6.
   (`CALCITE-780 <https://issues.apache.org/jira/browse/CALCITE-780>`_)
 - TIME and DATE columns in Phoenix are stored as full timestamps with a millisecond accuracy,
   but the remote protocol only exposes the time (hour/minute/second) or date (year/month/day)

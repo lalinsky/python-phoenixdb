@@ -40,13 +40,9 @@ class TypesTest(DatabaseTestCase):
         self.checkIntType("unsigned_long", 0, 9223372036854775807)
 
     def test_tinyint(self):
-        if self.conn._client.version < AVATICA_1_4_0:
-            raise unittest.SkipTest('tinyint only work properly with calcite >= 1.4.0')
         self.checkIntType("tinyint", -128, 127)
 
     def test_unsigned_tinyint(self):
-        if self.conn._client.version < AVATICA_1_4_0:
-            raise unittest.SkipTest('tinyint only work properly with calcite >= 1.4.0')
         self.checkIntType("unsigned_tinyint", 0, 127)
 
     def test_smallint(self):
@@ -89,7 +85,7 @@ class TypesTest(DatabaseTestCase):
 
     def test_decimal(self):
         if self.conn._client.version < AVATICA_1_4_0:
-            raise unittest.SkipTest('decimal only works correctly with Calcite >= 1.4.0')
+            raise unittest.SkipTest('decimal only works correctly with Calcite >= 1.4.0: https://issues.apache.org/jira/browse/CALCITE-795')
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val decimal(8,3)")
         with self.conn.cursor() as cursor:
             cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, 33333.333)")
@@ -123,8 +119,6 @@ class TypesTest(DatabaseTestCase):
             self.assertEqual(cursor.fetchall(), [[1, True], [2, False], [3, None], [4, True], [5, False], [6, None]])
 
     def test_time(self):
-        if self.conn._client.version < AVATICA_1_4_0:
-            raise unittest.SkipTest('date/time/timestamp only works with Calcite >= 1.4.0')
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val time")
         with self.conn.cursor() as cursor:
             cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, '1970-01-01 12:01:02')")
@@ -154,8 +148,6 @@ class TypesTest(DatabaseTestCase):
             ])
 
     def test_date(self):
-        if self.conn._client.version < AVATICA_1_4_0:
-            raise unittest.SkipTest('date/time/timestamp only works with Calcite >= 1.4.0')
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val date")
         with self.conn.cursor() as cursor:
             cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, '2015-07-12 00:00:00')")
@@ -193,8 +185,6 @@ class TypesTest(DatabaseTestCase):
             ])
 
     def test_timestamp(self):
-        if self.conn._client.version < AVATICA_1_4_0:
-            raise unittest.SkipTest('date/time/timestamp only works with Calcite >= 1.4.0')
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val timestamp")
         with self.conn.cursor() as cursor:
             cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, '2015-07-12 13:01:02.123')")
@@ -235,7 +225,7 @@ class TypesTest(DatabaseTestCase):
 
     def test_varchar_very_long(self):
         if self.conn._client.version < AVATICA_1_4_0:
-            raise unittest.SkipTest('long requests only work with Calcite >= 1.4.0')
+            raise unittest.SkipTest('long requests only work with Calcite >= 1.4.0: https://issues.apache.org/jira/browse/CALCITE-780')
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val varchar")
         with self.conn.cursor() as cursor:
             value = '1234567890' * 1000
@@ -280,8 +270,6 @@ class TypesTest(DatabaseTestCase):
             self.assertRaises(self.conn.DataError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, 'abc')")
 
     def test_binary(self):
-        if self.conn._client.version < AVATICA_1_4_0:
-            raise unittest.SkipTest('binary strings only work with Calcite >= 1.4.0')
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val binary(2)")
         with self.conn.cursor() as cursor:
             cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, 'ab')")
@@ -297,8 +285,6 @@ class TypesTest(DatabaseTestCase):
             ])
 
     def test_binary_all_bytes(self):
-        if self.conn._client.version < AVATICA_1_4_0:
-            raise unittest.SkipTest('binary strings only work with Calcite >= 1.4.0')
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val binary(256)")
         with self.conn.cursor() as cursor:
             value = ''
