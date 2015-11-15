@@ -14,4 +14,5 @@ if args.debug:
 
 with sqlline.SqlLine() as sqlline:
     sqlline.connect('phoenixdb', args.url)
+    sqlline.connection.autocommit = True
     sqlline.run()
