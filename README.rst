@@ -5,7 +5,7 @@ Phoenix database adapter for Python
 `Phoenix SQL database <http://phoenix.apache.org/>`_
 using the
 `remote query server <http://phoenix.apache.org/server.html>`_ introduced
-in Phoenix 4.6.  The library implements the  
+in Phoenix 4.4.  The library implements the  
 standard `DB API 2.0 <https://www.python.org/dev/peps/pep-0249/>`_ interface,
 which should be familiar to most Python programmers.
 
