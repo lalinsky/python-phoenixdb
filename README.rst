@@ -94,9 +94,12 @@ working Phoenix database and set the ``PHOENIXDB_TEST_DB_URL`` environment varia
 Phoenix 4.7
 -----------
 
-Phoenix 4.7 uses a protobuf-based serialization by default. This library only supports
-JSON serializatoin for now. In order for the library to work with Phoenix 4.7, you need
-to start the query server like this::
+Phoenix 4.7 uses a serialization based on Protocol Buffers (proto3) by default.
+This version of Protocol Buffers does not even have a stable release
+and is not generally available on Linux distributions.
+
+This library only supports the older JSON serialization. In order for the library
+to work with Phoenix 4.7, you need to start the query server like this::
 
     ./bin/queryserver.py start -Dphoenix.queryserver.serialization=JSON
 
