@@ -106,12 +106,6 @@ Known issues
 - In general, the library has not been battle-tested yet. You might encounter almost any problem. Use with care.
 - You can only use the library in autocommit mode. The native Java Phoenix library also implements batched upserts, which can be committed at once, but this is not exposed over the remote server.
   (`CALCITE-767 <https://issues.apache.org/jira/browse/CALCITE-767>`_)
-- In some cases, generic exceptions are raises, instead of more specific SQL errors. This is because the Avatica server from Calcite currently does not pass errors in a structured format.
-- DECIMAL data type do not work properly with Phoenix 4.6, which ships with Calcite 1.3.
-  You can use them if you make a custom build of Phoenix with a more recent version of Calcite.
-  (`CALCITE-795 <https://issues.apache.org/jira/browse/CALCITE-795>`_)
-- Requests with more than 16k data will fail on Phoenix 4.6.
-  (`CALCITE-780 <https://issues.apache.org/jira/browse/CALCITE-780>`_)
 - TIME and DATE columns in Phoenix are stored as full timestamps with a millisecond accuracy,
   but the remote protocol only exposes the time (hour/minute/second) or date (year/month/day)
   parts of the columns. (`CALCITE-797 <https://issues.apache.org/jira/browse/CALCITE-797>`_, `CALCITE-798 <https://issues.apache.org/jira/browse/CALCITE-798>`_)
