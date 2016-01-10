@@ -202,6 +202,8 @@ class Cursor(object):
                 self._parameter_data_types.append(('JAVA_SQL_TIMESTAMP', datetime_to_java_sql_timestamp))
             elif parameter['className'] == '[B':
                 self._parameter_data_types.append(('BYTE_STRING', Binary))
+            #elif parameter['className'] == 'org.apache.phoenix.schema.types.PhoenixArray':
+            #    self._parameter_data_types.append(('ARRAY', None))
             else:
                 self._parameter_data_types.append(('OBJECT', None))
 

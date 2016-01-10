@@ -293,3 +293,16 @@ class TypesTest(DatabaseTestCase):
             cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, ?)", [phoenixdb.Binary(value)])
             cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
             self.assertEqual(cursor.fetchall(), [[1, value]])
+
+    @unittest.skip("https://issues.apache.org/jira/browse/CALCITE-1050 https://issues.apache.org/jira/browse/PHOENIX-2585")
+    def test_array(self):
+        self.createTable("phoenixdb_test_tbl1", "id integer primary key, val integer[]")
+        with self.conn.cursor() as cursor:
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, ARRAY[1,2])")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (2, ?)", [[2,3]])
+            cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
+            self.assertEqual(cursor.fetchall(), [
+                [1, [1,2]],
+                [2, [2,3]],
+            ])
+
