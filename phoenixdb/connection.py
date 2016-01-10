@@ -32,9 +32,9 @@ class Connection(object):
 
     def __init__(self, client, **kwargs):
         self._client = client
-        self._id = str(uuid.uuid4())
         self._closed = False
         self._cursors = []
+        self.open()
         self.set_session(**kwargs)
 
     def __del__(self):
@@ -47,6 +47,11 @@ class Connection(object):
     def __exit__(self, exc_type, exc_value, traceback):
         if not self._closed:
             self.close()
+
+    def open(self):
+        """Opens the connection."""
+        self._id = str(uuid.uuid4())
+        self._client.openConnection(self._id)
 
     def close(self):
         """Closes the connection.

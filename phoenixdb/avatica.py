@@ -96,6 +96,7 @@ def parse_error_page(html):
 AVATICA_1_2_0 = (1, 2, 0)
 AVATICA_1_3_0 = (1, 3, 0)
 AVATICA_1_4_0 = (1, 4, 0)
+AVATICA_1_5_0 = (1, 5, 0)
 
 
 class AvaticaClient(object):
@@ -128,6 +129,8 @@ class AvaticaClient(object):
                     self.version = AVATICA_1_3_0
                 elif v in ('1.4.0', '1.4'):
                     self.version = AVATICA_1_4_0
+                elif v in ('1.5.0', '1.5'):
+                    self.version = AVATICA_1_5_0
         self.max_retries = max_retries if max_retries is not None else 3
         self.connection = None
 
@@ -296,6 +299,24 @@ class AvaticaClient(object):
         if connProps is not None:
             request['connProps'].update(connProps)
         return self._apply(request)['connProps']
+
+    def openConnection(self, connectionId, info=None):
+        """Opens a new connection.
+
+        New in avatica 1.5.
+
+        :param connectionId:
+            ID of the connection to close.
+        """
+        if self.version < AVATICA_1_5_0:
+            return
+        request = {
+            'request': 'openConnection',
+            'connectionId': connectionId,
+        }
+        if info is not None:
+            request['info'] = info
+        self._apply(request)
 
     def closeConnection(self, connectionId):
         """Closes a connection.

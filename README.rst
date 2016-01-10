@@ -91,6 +91,15 @@ working Phoenix database and set the ``PHOENIXDB_TEST_DB_URL`` environment varia
     export PHOENIXDB_TEST_DB_URL='http://localhost:8765/'
     nosetests
 
+Phoenix 4.7
+-----------
+
+Phoenix 4.7 uses a protobuf-based serialization by default. This library only supports
+JSON serializatoin for now. In order for the library to work with Phoenix 4.7, you need
+to start the query server like this::
+
+    ./bin/queryserver.py start -Dphoenix.queryserver.serialization=JSON
+
 Known issues
 ------------
 
