@@ -78,18 +78,36 @@ SQLSTATE_ERROR_CLASSES = [
 ]
 
 
+def raise_sql_error(code, sqlstate, message):
+    for prefix, error_class in SQLSTATE_ERROR_CLASSES:
+        if sqlstate.startswith(prefix):
+            raise error_class(message, code, sqlstate)
+
+
+def parse_and_raise_sql_error(message):
+    match = re.match(r'^(?:([^ ]+): )?ERROR (\d+) \(([0-9A-Z]{5})\): (.*?)$', message)
+    if match is not None:
+        exception, code, sqlstate, message = match.groups()
+        raise_sql_error(int(code), sqlstate, message)
+
+
 def parse_error_page(html):
     parser = JettyErrorPageParser()
     parser.feed(html)
     if parser.title == ['HTTP ERROR: 500']:
         message = ' '.join(parser.message).strip()
-        match = re.match(r'^([^ ]+): ERROR (\d+) \(([0-9A-Z]{5})\): (.*?)$', message)
-        if match is not None:
-            exception, code, sqlstate, message = match.groups()
-            code = int(code)
-            for prefix, error_class in SQLSTATE_ERROR_CLASSES:
-                if sqlstate.startswith(prefix):
-                    raise error_class(message, code, sqlstate)
+        parse_and_raise_sql_error(message)
+        raise errors.InternalError(message)
+
+
+def parse_error_json(text):
+    data = json.loads(text)
+    if data.get('response') == 'error':
+        message = data.get('errorMessage', '')
+        parse_and_raise_sql_error(message)
+        code = data.get('errorCode', -1)
+        sqlstate = data.get('sqlState', '00000')
+        raise_sql_error(code, sqlstate, message)
         raise errors.InternalError(message)
 
 
@@ -209,6 +227,8 @@ class AvaticaClient(object):
             logger.debug("Received response\n%s", response_body)
             if '<html>' in response_body:
                 parse_error_page(response_body)
+            if response.getheader('content-type', '').startswith('application/json'):
+                parse_error_json(response_body)
             raise errors.InterfaceError('RPC request returned invalid status code', response.status)
 
         noop = lambda x: x

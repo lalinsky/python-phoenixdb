@@ -19,9 +19,9 @@ class IntegrityErrorTest(DatabaseTestCase):
         with self.conn.cursor() as cursor:
             with self.assertRaises(self.conn.IntegrityError) as cm:
                 cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (NULL)")
-            self.assertEqual("Constraint violatioin. PHOENIXDB_TEST_TBL1.ID may not be null", cm.exception.message)
+            self.assertEqual("Constraint violation. PHOENIXDB_TEST_TBL1.ID may not be null", cm.exception.message)
             self.assertEqual(218, cm.exception.code)
-            self.assertEqual("22018", cm.exception.sqlstate)
+            self.assertIn(cm.exception.sqlstate, ("22018", "23018"))
 
 
 class DataErrorTest(DatabaseTestCase):
