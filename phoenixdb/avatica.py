@@ -387,16 +387,17 @@ class AvaticaClient(object):
         }
         if self.version >= AVATICA_1_4_0:
             request['statementId'] = statementId
-        return self._apply(request, 'Service$ExecuteResponse')['results']
+        if self.version >= AVATICA_1_5_0:
+            response_type = 'executeResults'
+        else:
+            response_type = 'Service$ExecuteResponse'
+        return self._apply(request, response_type)['results']
 
-    def prepare(self, connectionId, statementId, sql, maxRowCount=-1):
+    def prepare(self, connectionId, sql, maxRowCount=-1):
         """Prepares a statement.
 
         :param connectionId:
             ID of the current connection.
-
-        :param statementId:
-            ID of the statement to prepare.
 
         :param sql:
             SQL query.
@@ -413,9 +414,40 @@ class AvaticaClient(object):
             'sql': sql,
             'maxRowCount': maxRowCount,
         }
-        #if self.version >= AVATICA_1_4_0:
-        #    request['statementId'] = statementId
         return self._apply(request)['statement']
+
+    def execute(self, connectionId, statementId, parameterValues=None, maxRowCount=-1):
+        """Returns a frame of rows.
+
+        The frame describes whether there may be another frame. If there is not
+        another frame, the current iteration is done when we have finished the
+        rows in the this frame.
+
+        :param connectionId:
+            ID of the current connection.
+
+        :param statementId:
+            ID of the statement to fetch rows from.
+
+        :param parameterValues:
+            A list of parameter values, if statement is to be executed; otherwise ``None``.
+
+        :param maxRowCount:
+            Maximum number of rows to return; negative means no limit.
+
+        :returns:
+            Frame data, or ``None`` if there are no more.
+        """
+        request = {
+            'request': 'execute',
+            'statementHandle': {
+                'connectionId': connectionId,
+                'id': statementId,
+            },
+            'parameterValues': parameterValues,
+            'maxRowCount': maxRowCount,
+        }
+        return self._apply(request, 'executeResults')['results']
 
     def fetch(self, connectionId, statementId, parameterValues=None, offset=0, fetchMaxRowCount=-1):
         """Returns a frame of rows.
@@ -452,7 +484,12 @@ class AvaticaClient(object):
         if self.version < AVATICA_1_3_0:
             # XXX won't work for all types, but oh well...
             request['parameterValues'] = [v['value'] for v in parameterValues]
-        else:
+        elif self.version < AVATICA_1_5_0:
             request['parameterValues'] = parameterValues
+        else:
+            raise errors.InternalError('fetch with parameterValues not supported by avatica 1.5+')
         return self._apply(request)['frame']
+
+    def supportsExecute(self):
+        return self.version >= AVATICA_1_5_0
 

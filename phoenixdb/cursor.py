@@ -231,45 +231,62 @@ class Cursor(object):
             offset=offset, fetchMaxRowCount=self.itersize)
         self._set_frame(frame)
 
+    def _process_results(self, results):
+        if results:
+            result = results[0]
+            if result['ownStatement']:
+                self._set_id(result['statementId'])
+            self._set_signature(result['signature'])
+            self._set_frame(result['firstFrame'])
+            self._updatecount = result['updateCount']
+
     def execute(self, operation, parameters=None):
         if self._closed:
             raise ProgrammingError('the cursor is already closed')
         self._updatecount = -1
+        self._set_frame(None)
         if parameters is None:
             if self._id is None:
                 self._set_id(self._connection._client.createStatement(self._connection._id))
             results = self._connection._client.prepareAndExecute(self._connection._id, self._id,
                 operation, maxRowCount=self.itersize)
-            if results:
-                result = results[0]
-                if result['ownStatement']:
-                    self._set_id(result['statementId'])
-                self._set_signature(result['signature'])
-                self._set_frame(result['firstFrame'])
-                self._updatecount = result['updateCount']
+            self._process_results(results)
         else:
-            statement = self._connection._client.prepare(self._connection._id, self._id,
+            statement = self._connection._client.prepare(self._connection._id,
                 operation, maxRowCount=self.itersize)
             self._set_id(statement['id'])
             self._set_signature(statement['signature'])
-            frame = self._connection._client.fetch(self._connection._id, self._id,
-                self._transform_parameters(parameters),
-                fetchMaxRowCount=self.itersize)
-            self._set_frame(frame)
+            if self._connection._client.supportsExecute():
+                results = self._connection._client.execute(self._connection._id, self._id,
+                    self._transform_parameters(parameters),
+                    maxRowCount=self.itersize)
+                self._process_results(results)
+            else:
+                # XXX old avatica (1.4-), remove later
+                frame = self._connection._client.fetch(self._connection._id, self._id,
+                    self._transform_parameters(parameters),
+                    fetchMaxRowCount=self.itersize)
+                self._set_frame(frame)
 
     def executemany(self, operation, seq_of_parameters):
         if self._closed:
             raise ProgrammingError('the cursor is already closed')
         self._updatecount = -1
         self._set_frame(None)
-        statement = self._connection._client.prepare(self._connection._id, self._id,
+        statement = self._connection._client.prepare(self._connection._id,
             operation, maxRowCount=0)
         self._set_id(statement['id'])
         self._set_signature(statement['signature'])
         for parameters in seq_of_parameters:
-            self._connection._client.fetch(self._connection._id, self._id,
-                self._transform_parameters(parameters),
-                fetchMaxRowCount=0)
+            if self._connection._client.supportsExecute():
+                self._connection._client.execute(self._connection._id, self._id,
+                    self._transform_parameters(parameters),
+                    maxRowCount=0)
+            else:
+                # XXX old avatica (1.4-), remove later
+                self._connection._client.fetch(self._connection._id, self._id,
+                    self._transform_parameters(parameters),
+                    fetchMaxRowCount=0)
 
     def fetchone(self):
         if self._frame is None:
