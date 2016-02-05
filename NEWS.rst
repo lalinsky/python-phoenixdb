@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 0.3
+-----------
+
+- Compatible with Phoenix 4.7.
+
 Version 0.2
 -----------
 
