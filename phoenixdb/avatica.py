@@ -115,6 +115,7 @@ AVATICA_1_2_0 = (1, 2, 0)
 AVATICA_1_3_0 = (1, 3, 0)
 AVATICA_1_4_0 = (1, 4, 0)
 AVATICA_1_5_0 = (1, 5, 0)
+AVATICA_1_6_0 = (1, 6, 0)
 
 
 class AvaticaClient(object):
@@ -149,6 +150,10 @@ class AvaticaClient(object):
                     self.version = AVATICA_1_4_0
                 elif v in ('1.5.0', '1.5'):
                     self.version = AVATICA_1_5_0
+                elif v in ('1.6.0', '1.6'):
+                    self.version = AVATICA_1_6_0
+                else:
+                    raise errors.ProgrammingError('Unknown Avatica version')
         self.max_retries = max_retries if max_retries is not None else 3
         self.connection = None
 

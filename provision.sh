@@ -2,8 +2,14 @@
 
 set -e
 
-HBASE_VERSION=1.1.2
+HBASE_VERSION=1.1.5
+
+#PHOENIX_VERSION=4.7.0-HBase-1.1
+
 PHOENIX_VERSION=4.6.0-HBase-1.1
+
+#PHOENIX_VERSION=4.4.0-HBase-1.1
+#APACHE_MIRROR=http://archive.apache.org/dist/
 
 export DEBIAN_FRONTEND=noninteractive
 
@@ -15,7 +21,10 @@ echo "> Installing java"
 sudo apt-get -y update
 sudo apt-get -y install wget openjdk-7-jdk
 
-APACHE_MIRROR="$(python -c 'import json, urllib2; a = json.load(urllib2.urlopen("http://www.apache.org/dyn/closer.cgi?as_json=1")); print a["preferred"].rstrip("/")')"
+if [ -z "$APACHE_MIRROR" ]
+then
+    APACHE_MIRROR="$(python -c 'import json, urllib2; a = json.load(urllib2.urlopen("http://www.apache.org/dyn/closer.cgi?as_json=1")); print a["preferred"].rstrip("/")')"
+fi
 echo "> Using Apache mirror: $APACHE_MIRROR"
 
 if [ ! -d /opt/hbase ]
@@ -26,7 +35,7 @@ then
 	echo "> Extracting HBase"
 	sudo mkdir /opt/hbase
 	sudo chown vagrant:vagrant -R /opt/hbase
-	tar xvf /tmp/hbase-$HBASE_VERSION-bin.tar.gz --strip-components=1 -C /opt/hbase
+	tar xf /tmp/hbase-$HBASE_VERSION-bin.tar.gz --strip-components=1 -C /opt/hbase
 fi
 
 if [ ! -d /opt/phoenix ]
@@ -37,7 +46,7 @@ then
 	echo "> Extracting Phoenix"
 	sudo mkdir /opt/phoenix
 	sudo chown vagrant:vagrant -R /opt/phoenix
-	tar xvf /tmp/phoenix-$PHOENIX_VERSION-bin.tar.gz --strip-components=1 -C /opt/phoenix
+	tar xf /tmp/phoenix-$PHOENIX_VERSION-bin.tar.gz --strip-components=1 -C /opt/phoenix
 fi
 
 echo "> Linking Phoenix server JAR file to HBase lib directory"
@@ -55,5 +64,6 @@ fi
 if ! pgrep -f proc_phoenixserver >/dev/null
 then
 	echo "> Starting Phoenix query server"
+	#sudo -u vagrant /opt/phoenix/bin/queryserver.py start -Dphoenix.queryserver.serialization=JSON
 	sudo -u vagrant /opt/phoenix/bin/queryserver.py start
 fi
