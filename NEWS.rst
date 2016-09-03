@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 0.4
+-----------
+
+- Fixes for the final version of Phoenix 4.7.
+
 Version 0.3
 -----------
 
