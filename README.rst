@@ -77,6 +77,8 @@ necessary requirements::
     pip install -r requirements.txt
     python setup.py develop
 
+To create or update protobuf classes, change the tag in `gen-protobuf.sh` and execute. For Calcite >= 1.6, the path changes from `avatica/src/main/protobuf` to `avatica/core/src/main/protobuf`.
+
 If you need a Phoenix server for experimenting, you can get one running
 quickly using Vagrant::
 
