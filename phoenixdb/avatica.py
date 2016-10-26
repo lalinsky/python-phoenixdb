@@ -26,6 +26,8 @@ import time
 from decimal import Decimal
 from HTMLParser import HTMLParser
 from phoenixdb import errors
+# TODO conditionally import based on the connection string
+from phoenixdb.schema.calcite1_8 import requests_pb2, common_pb2, responses_pb2
 
 __all__ = ['AvaticaClient']
 
@@ -100,15 +102,24 @@ def parse_error_page(html):
         raise errors.InternalError(message)
 
 
-def parse_error_json(text):
-    data = json.loads(text)
-    if data.get('response') == 'error':
-        message = data.get('errorMessage', '')
-        parse_and_raise_sql_error(message)
-        code = data.get('errorCode', -1)
-        sqlstate = data.get('sqlState', '00000')
-        raise_sql_error(code, sqlstate, message)
-        raise errors.InternalError(message)
+def parse_error_protobuf(text):
+    message = common_pb2.WireMessage()
+    message.ParseFromString(text)
+
+    error = responses_pb2.ErrorResponse()
+    error.ParseFromString(message.wrapped_message)
+
+    # TODO all of these fields exist
+    # error.error_code
+    # error.error_message
+    # error.exceptions
+    # error.has_exceptions
+    # error.metadata
+    # error.severity
+    # error.sql_state
+    if error.has_exceptions:
+        raise errors.InternalError(error.exceptions)
+    raise errors.InternalError(error.error_message)
 
 
 AVATICA_1_2_0 = (1, 2, 0)
@@ -129,7 +140,7 @@ class AvaticaClient(object):
 
     def __init__(self, url, version=None, max_retries=None):
         """Constructs a new client object.
-        
+
         :param url:
             URL of an Avatica RPC server.
         :param version:
@@ -205,25 +216,11 @@ class AvaticaClient(object):
 
     def _apply(self, request_data, expected_response_type=None):
         logger.debug("Sending request\n%s", pprint.pformat(request_data))
-
-        class FakeFloat(float):
-            # XXX there has to be a better way to do this
-            def __init__(self, value):
-                self.value = value
-            def __repr__(self):
-                return str(self.value)
-
-        def default(obj):
-            if isinstance(obj, Decimal):
-                return FakeFloat(obj)
-            raise TypeError
-
-        if self.version >= AVATICA_1_4_0:
-            body = json.dumps(request_data, default=default)
-            headers = {'content-type': 'application/json'}
-        else:
-            body = None
-            headers = {'request': json.dumps(request_data, default=default)}
+        message = common_pb2.WireMessage()
+        message.name = 'org.apache.calcite.avatica.proto.Requests${}'.format(request_data.__class__.__name__)
+        message.wrapped_message = request_data.SerializeToString()
+        body = message.SerializeToString()
+        headers = {'content-type': 'application/x-google-protobuf'}
 
         response = self._post_request(body, headers)
         response_body = response.read()
@@ -232,53 +229,64 @@ class AvaticaClient(object):
             logger.debug("Received response\n%s", response_body)
             if '<html>' in response_body:
                 parse_error_page(response_body)
-            if response.getheader('content-type', '').startswith('application/json'):
-                parse_error_json(response_body)
+            # TODO does the response ever send x-google-protobuf?
+            # TODO seems to only send octet-stream
+            else:
+                parse_error_protobuf(response_body)
             raise errors.InterfaceError('RPC request returned invalid status code', response.status)
 
-        noop = lambda x: x
-        try:
-            response_data = json.loads(response_body, parse_float=noop)
-        except ValueError as e:
-            logger.debug("Received response\n%s", response_body)
-            raise errors.InterfaceError('valid JSON document', cause=e)
+        message = common_pb2.WireMessage()
+        message.ParseFromString(response_body)
 
-        logger.debug("Received response\n%s", pprint.pformat(response_data))
+        logger.debug("Received response\n%s", message.name)
 
-        if 'response' not in response_data:
-            raise errors.InterfaceError('missing response type')
+        # TODO is this needed if only octet-stream is returned?
+        # if 'response' not in response_data:
+        #     raise errors.InterfaceError('missing response type')
+        #
+        # if expected_response_type is None:
+        #     expected_response_type = request_data['request']
+        #
+        # if response_data['response'] != expected_response_type:
+        #     raise errors.InterfaceError('unexpected response type "{}"'.format(response_data['response']))
 
-        if expected_response_type is None:
-            expected_response_type = request_data['request']
-
-        if response_data['response'] != expected_response_type:
-            raise errors.InterfaceError('unexpected response type "{}"'.format(response_data['response']))
-
-        return response_data
+        return message.wrapped_message
 
     def getCatalogs(self):
-        request = {'request': 'getCatalogs'}
+        # TODO this isn't used anywhere
+        request = requests_pb2.CatalogRequest()
+        # TODO needs connection_id
+        # request.connection_id = self.connection_id
+        # TODO there is no responses_pb2.CatalogResponse
         return self._apply(request)
 
+
     def getSchemas(self, catalog=None, schemaPattern=None):
-        request = {
-            'request': 'getSchemas',
-            'catalog': catalog,
-            'schemaPattern': schemaPattern,
-        }
+        # TODO this isn't used anywhere
+        request = requests_pb2.SchemasRequest()
+        # TODO needs connection_id
+        # request.connection_id
+        # TODO these two can't be None
+        # request.catalog = catalog
+        # request.schema_pattern = schemaPattern
+        # TODO there is no responses_pb2.SchemasResponse
         return self._apply(request)
 
     def getTables(self, catalog=None, schemaPattern=None, tableNamePattern=None, typeList=None):
-        request = {
-            'request': 'getTables',
-            'catalog': catalog,
-            'schemaPattern': schemaPattern,
-            'tableNamePattern': tableNamePattern,
-            'typeList': typeList,
-        }
+        # TODO this isn't used anywhere
+        request = requests_pb2.TablesRequest()
+        # TODO needs connection_id
+        # request.connection_id = connectionId
+        # TODO these can't be None
+        request.catalog = catalog
+        request.schema_pattern = schemaPattern
+        request.table_name_pattern = tableNamePattern
+        request.type_list = typeList
+        # TODO find response type
         return self._apply(request)
 
     def getColumns(self, catalog=None, schemaPattern=None, tableNamePattern=None, columnNamePattern=None):
+        # TODO this isn't used
         request = {
             'request': 'getColumns',
             'catalog': catalog,
@@ -289,10 +297,12 @@ class AvaticaClient(object):
         return self._apply(request)
 
     def getTableTypes(self):
+        # TODO this isn't used
         request = {'request': 'getTableTypes'}
         return self._apply(request)
 
     def getTypeInfo(self):
+        # TODO this isn't used
         request = {'request': 'getTypeInfo'}
         return self._apply(request)
 
@@ -308,40 +318,47 @@ class AvaticaClient(object):
         :returns:
             Dictionary with the current properties.
         """
-        request = {
-            'request': 'connectionSync',
-            'connectionId': connectionId,
-            'connProps': {
-                'connProps': 'connPropsImpl',
-                'autoCommit': None,
-                'readOnly': None,
-                'transactionIsolation': None,
-                'catalog': None,
-                'schema': None,
-                'dirty': None,
-            },
-        }
-        if connProps is not None:
-            request['connProps'].update(connProps)
-        return self._apply(request)['connProps']
+        if connProps is None:
+            connProps = {}
+
+        request = requests_pb2.ConnectionSyncRequest()
+        request.connection_id = connectionId
+        # TODO previously defaulted to None...ok for bool?
+        request.conn_props.auto_commit = connProps.get('autoCommit', False)
+        # TODO new param...why is this needed?
+        request.conn_props.has_auto_commit = True
+        # TODO previously defaulted to None...ok for bool?
+        request.conn_props.read_only = connProps.get('readOnly', False)
+        # TODO new param...why is this needed?
+        request.conn_props.has_read_only = True
+        # TODO set this to 0, 1, 2, 4, 8?
+        request.conn_props.transaction_isolation = connProps.get('transactionIsolation', 0)
+        # TODO set catalog and schema?
+        request.conn_props.catalog = connProps.get('catalog', '')
+        request.conn_props.schema = connProps.get('schema', '')
+        # TODO also has this field
+        # request.conn_props.is_dirty
+
+        response_data = self._apply(request)
+        response = responses_pb2.ConnectionSyncResponse()
+        response.ParseFromString(response_data)
+        return response
 
     def openConnection(self, connectionId, info=None):
         """Opens a new connection.
 
-        New in avatica 1.5.
-
         :param connectionId:
-            ID of the connection to close.
+            ID of the connection to open.
         """
-        if self.version < AVATICA_1_5_0:
-            return
-        request = {
-            'request': 'openConnection',
-            'connectionId': connectionId,
-        }
+        request = requests_pb2.OpenConnectionRequest()
+        request.connection_id = connectionId
+
         if info is not None:
-            request['info'] = info
-        self._apply(request)
+            request.info = info
+
+        response_data = self._apply(request)
+        response = responses_pb2.OpenConnectionResponse()
+        response.ParseFromString(response_data)
 
     def closeConnection(self, connectionId):
         """Closes a connection.
@@ -349,10 +366,9 @@ class AvaticaClient(object):
         :param connectionId:
             ID of the connection to close.
         """
-        request = {
-            'request': 'closeConnection',
-            'connectionId': connectionId,
-        }
+        request = requests_pb2.CloseConnectionRequest()
+        request.connection_id = connectionId
+
         self._apply(request)
 
     def createStatement(self, connectionId):
@@ -364,11 +380,14 @@ class AvaticaClient(object):
         :returns:
             New statement ID.
         """
-        request = {
-            'request': 'createStatement',
-            'connectionId': connectionId,
-        }
-        return self._apply(request)['statementId']
+        request = requests_pb2.CreateStatementRequest()
+        request.connection_id = connectionId
+
+        response_data = self._apply(request)
+        response = responses_pb2.CreateStatementResponse()
+        response.ParseFromString(response_data)
+
+        return response.statement_id
 
     def closeStatement(self, connectionId, statementId):
         """Closes a statement.
@@ -379,11 +398,10 @@ class AvaticaClient(object):
         :param statementId:
             ID of the statement to close.
         """
-        request = {
-            'request': 'closeStatement',
-            'connectionId': connectionId,
-            'statementId': statementId,
-        }
+        request = requests_pb2.CloseStatementRequest()
+        request.connection_id = connectionId
+        request.statement_id = statementId
+
         self._apply(request)
 
     def prepareAndExecute(self, connectionId, statementId, sql, maxRowCount=-1):
@@ -404,19 +422,18 @@ class AvaticaClient(object):
         :returns:
             Result set with the signature of the prepared statement and the first frame data.
         """
-        request = {
-            'request': 'prepareAndExecute',
-            'connectionId': connectionId,
-            'sql': sql,
-            'maxRowCount': maxRowCount,
-        }
-        if self.version >= AVATICA_1_4_0:
-            request['statementId'] = statementId
-        if self.version >= AVATICA_1_5_0:
-            response_type = 'executeResults'
-        else:
-            response_type = 'Service$ExecuteResponse'
-        return self._apply(request, response_type)['results']
+        request = requests_pb2.PrepareAndExecuteRequest()
+        request.connection_id = connectionId
+        request.sql = sql
+        request.max_row_count = maxRowCount
+        request.statement_id = statementId
+        # TODO additional param in 1.8?
+        # request.max_rows_total = maxRowsTotal
+
+        response_data = self._apply(request)
+        response = responses_pb2.ExecuteResponse()
+        response.ParseFromString(response_data)
+        return response.results
 
     def prepare(self, connectionId, sql, maxRowCount=-1):
         """Prepares a statement.
@@ -433,15 +450,19 @@ class AvaticaClient(object):
         :returns:
             Signature of the prepared statement.
         """
-        request = {
-            'request': 'prepare',
-            'connectionId': connectionId,
-            'sql': sql,
-            'maxRowCount': maxRowCount,
-        }
-        return self._apply(request)['statement']
+        request = requests_pb2.PrepareRequest()
+        request.connection_id = connectionId
+        request.sql = sql
+        request.max_row_count = maxRowCount
+        # TODO additional param in 1.8?
+        # request.max_rows_total = maxRowsTotal
 
-    def execute(self, connectionId, statementId, parameterValues=None, maxRowCount=-1):
+        response_data = self._apply(request)
+        response = responses_pb2.PrepareResponse()
+        response.ParseFromString(response_data)
+        return response.statement
+
+    def execute(self, connectionId, statementId, signature, parameterValues=None, maxRowCount=-1):
         """Returns a frame of rows.
 
         The frame describes whether there may be another frame. If there is not
@@ -454,6 +475,9 @@ class AvaticaClient(object):
         :param statementId:
             ID of the statement to fetch rows from.
 
+        :param signature:
+            common_pb2.Signature object - TODO this is new
+
         :param parameterValues:
             A list of parameter values, if statement is to be executed; otherwise ``None``.
 
@@ -463,16 +487,20 @@ class AvaticaClient(object):
         :returns:
             Frame data, or ``None`` if there are no more.
         """
-        request = {
-            'request': 'execute',
-            'statementHandle': {
-                'connectionId': connectionId,
-                'id': statementId,
-            },
-            'parameterValues': parameterValues,
-            'maxRowCount': maxRowCount,
-        }
-        return self._apply(request, 'executeResults')['results']
+        request = requests_pb2.ExecuteRequest()
+        request.statementHandle.id = statementId
+        request.statementHandle.connection_id = connectionId
+        request.parameter_values.extend(parameterValues)
+        request.has_parameter_values = parameterValues is not None
+        request.statementHandle.signature.CopyFrom(signature)
+        # TODO extra param in 1.8?
+        # request.first_frame_max_size =
+        # TODO no maxRowCount?
+
+        response_data = self._apply(request)
+        response = responses_pb2.ExecuteResponse()
+        response.ParseFromString(response_data)
+        return response.results
 
     def fetch(self, connectionId, statementId, parameterValues=None, offset=0, fetchMaxRowCount=-1):
         """Returns a frame of rows.
@@ -499,22 +527,15 @@ class AvaticaClient(object):
         :returns:
             Frame data, or ``None`` if there are no more.
         """
-        request = {
-            'request': 'fetch',
-            'connectionId': connectionId,
-            'statementId': statementId,
-            'offset': offset,
-            'fetchMaxRowCount': fetchMaxRowCount,
-        }
-        if self.version < AVATICA_1_3_0:
-            # XXX won't work for all types, but oh well...
-            request['parameterValues'] = [v['value'] for v in parameterValues]
-        elif self.version < AVATICA_1_5_0:
-            request['parameterValues'] = parameterValues
-        else:
-            raise errors.InternalError('fetch with parameterValues not supported by avatica 1.5+')
-        return self._apply(request)['frame']
+        request = requests_pb2.FetchRequest()
+        request.connetion_id = connectionId
+        request.statement_id = statementId
+        request.offset = offset
+        request.fetch_max_row_count = fetchMaxRowCount
+        # TODO extra param in 1.8?
+        # request.frame_max_size =
 
-    def supportsExecute(self):
-        return self.version >= AVATICA_1_5_0
-
+        response_data = self._apply(request)
+        response = responses_pb2.FetchResponse()
+        response.ParseFromString(response_data)
+        return response.frame

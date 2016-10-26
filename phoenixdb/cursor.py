@@ -17,14 +17,17 @@ import collections
 import base64
 import datetime
 from decimal import Decimal
+# TODO what are the other types used for, other than tests?
 from phoenixdb.types import Binary
-from phoenixdb.errors import OperationalError, NotSupportedError, ProgrammingError
+from phoenixdb.errors import OperationalError, NotSupportedError, ProgrammingError, InternalError
+# TODO conditionally import based on the connection string
+from phoenixdb.schema.calcite1_8 import requests_pb2, common_pb2, responses_pb2
 
 __all__ = ['Cursor', 'ColumnDescription']
 
 logger = logging.getLogger(__name__)
 
-
+# TODO this can probably be replaced
 ColumnDescription = collections.namedtuple('ColumnDescription', 'name type_code display_size internal_size precision scale null_ok')
 """Named tuple for representing results from :attr:`Cursor.description`."""
 
@@ -60,7 +63,7 @@ def datetime_to_java_sql_timestamp(d):
 
 class Cursor(object):
     """Database cursor for executing queries and iterating over results.
-    
+
     You should not construct this object manually, use :meth:`Connection.cursor() <phoenixdb.connection.Connection.cursor>` instead.
     """
 
@@ -139,6 +142,7 @@ class Cursor(object):
             return None
         description = []
         for column in self._signature['columns']:
+            # TODO
             description.append(ColumnDescription(
                 column['columnName'],
                 column['type']['name'],
@@ -155,6 +159,92 @@ class Cursor(object):
             self._connection._client.closeStatement(self._connection._id, self._id)
         self._id = id
 
+    def _convert_class(self, class_name):
+        """Converts a given Java class name.
+
+        :param class_name:
+            The JDBC class name.
+
+        :returns: tuple ``(rep, field_name, cast_type, mutate_type)``
+            WHERE
+            ``rep`` is a ``common_pb2.Rep`` type
+            ``field_name`` is the field name in ``common_pb2.TypedValue``
+            ``cast_type`` is the method to cast the JDBC value to the Python value
+            ``mutate_type`` is the method to mutate the Python value to the JDBC value
+        """
+        rep = None
+        field_name = None
+        cast_type = None
+        mutate_type = None
+
+        # TODO move this to a separate class?
+        if class_name == 'java.lang.String':
+            rep = common_pb2.STRING
+            field_name = 'string_value'
+            cast_type = str
+        elif class_name == 'java.math.BigDecimal':
+            rep = common_pb2.BIG_DECIMAL
+            field_name = 'string_value'
+            cast_type = Decimal
+        elif class_name == 'java.lang.Boolean':
+            rep = common_pb2.BOOLEAN
+            field_name = 'boolean_value'
+            cast_type = bool
+        elif class_name == 'java.lang.Byte':
+            rep = common_pb2.BYTE
+            field_name = 'number_value'
+            cast_type = bytes
+        elif class_name == 'java.lang.Short':
+            rep = common_pb2.SHORT
+            field_name = 'number_value'
+            cast_type = int
+        elif class_name == 'java.lang.Integer':
+            rep = common_pb2.INTEGER
+            field_name = 'number_value'
+            cast_type = int
+        elif class_name == 'java.lang.Long':
+            rep = common_pb2.LONG
+            field_name = 'number_value'
+            cast_type = int
+        elif class_name == 'java.lang.Float':
+            rep = common_pb2.FLOAT
+            field_name = 'double_value'
+            cast_type = float
+        elif class_name == 'java.lang.Double':
+            rep = common_pb2.DOUBLE
+            field_name = 'double_value'
+            cast_type = float
+        elif class_name == '[B':
+            rep = common_pb2.BYTE_STRING
+            field_name = 'bytes_value'
+            cast_type = base64.b64decode
+            mutate_type = Binary
+        elif class_name == 'java.sql.Date':
+            rep = common_pb2.JAVA_SQL_DATE
+            field_name = 'number_value'
+            cast_type = date_from_java_sql_date
+            mutate_type = date_to_java_sql_date
+        elif class_name == 'java.sql.Time':
+            rep = common_pb2.JAVA_SQL_TIME
+            field_name = 'number_value'
+            cast_type = time_from_java_sql_time
+            mutate_type = time_to_java_sql_time
+        elif class_name == 'java.sql.Timestamp':
+            rep = common_pb2.JAVA_SQL_TIMESTAMP
+            field_name = 'number_value'
+            cast_type = datetime_from_java_sql_timestamp
+            mutate_type = datetime_to_java_sql_timestamp
+        # TODO should this be org.apache.phoenix.schema.types.PhoenixArray
+        # TODO arrays and structs are handled differently
+        #elif class_name == 'java.lang.Array':
+        #    rep = common_pb2.ARRAY
+        #elif class_name == 'java.lang.Struct':
+        #    rep = common_pb2.STRUCT
+        else:
+            rep = common_pb2.OBJECT
+
+        return rep, field_name, cast_type, mutate_type
+
     def _set_signature(self, signature):
         self._signature = signature
         self._column_data_types = []
@@ -162,73 +252,52 @@ class Cursor(object):
         if signature is None:
             return
         identity = lambda value: value
-        for i, column in enumerate(signature['columns']):
-            if column['columnClassName'] == 'java.math.BigDecimal':
-                self._column_data_types.append((i, Decimal))
-            elif column['columnClassName'] == 'java.lang.Float' or column['columnClassName'] == 'java.lang.Double':
-                self._column_data_types.append((i, float))
-            elif column['columnClassName'] == 'java.sql.Time':
-                self._column_data_types.append((i, time_from_java_sql_time))
-            elif column['columnClassName'] == 'java.sql.Date':
-                self._column_data_types.append((i, date_from_java_sql_date))
-            elif column['columnClassName'] == 'java.sql.Timestamp':
-                self._column_data_types.append((i, datetime_from_java_sql_timestamp))
-            elif column['type']['name'] == 'BINARY':
-                self._column_data_types.append((i, base64.b64decode))
-        for parameter in signature['parameters']:
-            if parameter['className'] == 'java.math.BigDecimal':
-                self._parameter_data_types.append(('NUMBER', None))
-            elif parameter['className'] == 'java.lang.Float':
-                self._parameter_data_types.append(('FLOAT', None))
-            elif parameter['className'] == 'java.lang.Double':
-                self._parameter_data_types.append(('DOUBLE', None))
-            elif parameter['className'] == 'java.lang.Long':
-                self._parameter_data_types.append(('LONG', None))
-            elif parameter['className'] == 'java.lang.Integer':
-                self._parameter_data_types.append(('INTEGER', None))
-            elif parameter['className'] == 'java.lang.Short':
-                self._parameter_data_types.append(('SHORT', None))
-            elif parameter['className'] == 'java.lang.Byte':
-                self._parameter_data_types.append(('BYTE', None))
-            elif parameter['className'] == 'java.lang.Boolean':
-                self._parameter_data_types.append(('BOOLEAN', None))
-            elif parameter['className'] == 'java.lang.String':
-                self._parameter_data_types.append(('STRING', None))
-            elif parameter['className'] == 'java.sql.Time':
-                self._parameter_data_types.append(('JAVA_SQL_TIME', time_to_java_sql_time))
-            elif parameter['className'] == 'java.sql.Date':
-                self._parameter_data_types.append(('JAVA_SQL_DATE', date_to_java_sql_date))
-            elif parameter['className'] == 'java.sql.Timestamp':
-                self._parameter_data_types.append(('JAVA_SQL_TIMESTAMP', datetime_to_java_sql_timestamp))
-            elif parameter['className'] == '[B':
-                self._parameter_data_types.append(('BYTE_STRING', Binary))
-            #elif parameter['className'] == 'org.apache.phoenix.schema.types.PhoenixArray':
-            #    self._parameter_data_types.append(('ARRAY', None))
-            else:
-                self._parameter_data_types.append(('OBJECT', None))
+
+        for i, column in enumerate(signature.columns):
+            dtype = self._convert_class(column.column_class_name)
+            self._column_data_types.append(dtype)
+
+        for parameter in signature.parameters:
+            print 'GETTING PARAM FOR SIG', parameter
+            dtype = self._convert_class(parameter.class_name)
+            self._parameter_data_types.append(dtype)
 
     def _transform_parameters(self, parameters):
         typed_parameters = []
         for value, data_type in zip(parameters, self._parameter_data_types):
+            typed_value = common_pb2.TypedValue()
+
             if value is None:
-                typed_parameters.append({'type': 'OBJECT', 'value': None})
+                typed_value.null = True
+                typed_value.type = common_pb2.NULL
             else:
-                if data_type[1] is not None:
-                    value = data_type[1](value)
-                typed_parameters.append({'type': data_type[0], 'value': value})
+                typed_value.null = False
+
+                # use the mutator function
+                if data_type[3] is not None:
+                    value = data_type[3](value)
+
+                # set the Rep field
+                typed_value.type = data_type[0]
+
+                # set the field_name to the value
+                setattr(typed_value, data_type[1], value)
+            typed_parameters.append(typed_value)
         return typed_parameters
 
     def _set_frame(self, frame):
         self._frame = frame
         self._pos = None
+
         if frame is not None:
-            if frame['rows']:
+            if frame.rows:
                 self._pos = 0
-            elif not frame['done']:
-                raise InternalError('got an empty frame, but the statement is not done yet')
+            # TODO although 'rows' is empty, 'done' seems to always be False...why?
+            #elif not frame.done:
+            #    raise InternalError('got an empty frame, but the statement is not done yet')
 
     def _fetch_next_frame(self):
-        offset = self._frame['offset'] + len(self._frame['rows'])
+        offset = self._frame.offset + len(self._frame.rows)
         frame = self._connection._client.fetch(self._connection._id, self._id,
             offset=offset, fetchMaxRowCount=self.itersize)
         self._set_frame(frame)
@@ -236,11 +305,11 @@ class Cursor(object):
     def _process_results(self, results):
         if results:
             result = results[0]
-            if result['ownStatement']:
-                self._set_id(result['statementId'])
-            self._set_signature(result['signature'])
-            self._set_frame(result['firstFrame'])
-            self._updatecount = result['updateCount']
+            if result.own_statement:
+                self._set_id(result.statement_id)
+            self._set_signature(result.signature)
+            self._set_frame(result.first_frame)
+            self._updatecount = result.update_count
 
     def execute(self, operation, parameters=None):
         if self._closed:
@@ -256,19 +325,13 @@ class Cursor(object):
         else:
             statement = self._connection._client.prepare(self._connection._id,
                 operation, maxRowCount=self.itersize)
-            self._set_id(statement['id'])
-            self._set_signature(statement['signature'])
-            if self._connection._client.supportsExecute():
-                results = self._connection._client.execute(self._connection._id, self._id,
-                    self._transform_parameters(parameters),
-                    maxRowCount=self.itersize)
-                self._process_results(results)
-            else:
-                # XXX old avatica (1.4-), remove later
-                frame = self._connection._client.fetch(self._connection._id, self._id,
-                    self._transform_parameters(parameters),
-                    fetchMaxRowCount=self.itersize)
-                self._set_frame(frame)
+            self._set_id(statement.id)
+            self._set_signature(statement.signature)
+
+            results = self._connection._client.execute(self._connection._id, self._id,
+                statement.signature, self._transform_parameters(parameters),
+                maxRowCount=self.itersize)
+            self._process_results(results)
 
     def executemany(self, operation, seq_of_parameters):
         if self._closed:
@@ -280,33 +343,53 @@ class Cursor(object):
         self._set_id(statement['id'])
         self._set_signature(statement['signature'])
         for parameters in seq_of_parameters:
-            if self._connection._client.supportsExecute():
-                self._connection._client.execute(self._connection._id, self._id,
-                    self._transform_parameters(parameters),
-                    maxRowCount=0)
-            else:
-                # XXX old avatica (1.4-), remove later
-                self._connection._client.fetch(self._connection._id, self._id,
-                    self._transform_parameters(parameters),
-                    fetchMaxRowCount=0)
+            self._connection._client.execute(self._connection._id, self._id,
+                self._transform_parameters(parameters),
+                maxRowCount=0)
 
     def fetchone(self):
         if self._frame is None:
             raise ProgrammingError('no select statement was executed')
         if self._pos is None:
             return None
-        rows = self._frame['rows']
-        row = rows[self._pos]
+        rows = self._frame.rows
+        row = self._transform_row(rows[self._pos])
         self._pos += 1
         if self._pos >= len(rows):
             self._pos = None
-            if not self._frame['done']:
+            if not self._frame.done:
                 self._fetch_next_frame()
-        for i, data_type in self._column_data_types:
-            value = row[i]
-            if value is not None:
-                row[i] = data_type(value)
         return row
+
+    def _transform_row(self, row):
+        """Transforms a Row into Python values.
+
+        :param row:
+            A ``common_pb2.Row`` object.
+
+        :returns:
+            A list of values casted into the correct Python types.
+        """
+        tmp = []
+
+        for i, column in enumerate(row.value):
+            # TODO handle arrays, structs
+            if column.has_array_value:
+                pass
+            elif column.scalar_value.null:
+                tmp.append(None)
+            else:
+                dtype = self._column_data_types[i]
+
+                # get the value from the field_name
+                value = getattr(column.scalar_value, dtype[1])
+
+                # cast the value
+                # TODO try/catch the casting
+                value = dtype[2](value)
+
+                tmp.append(value)
+        return tmp
 
     def fetchmany(self, size=None):
         if size is None:
@@ -354,7 +437,7 @@ class Cursor(object):
         """Read-only attribute providing the current 0-based index of the
         cursor in the result set or ``None`` if the index cannot be
         determined.
-        
+
         The index can be seen as index of the cursor in a sequence
         (the result set). The next fetch operation will fetch the
         row indexed by :attr:`rownumber` in that sequence.
