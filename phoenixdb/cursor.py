@@ -258,7 +258,6 @@ class Cursor(object):
             self._column_data_types.append(dtype)
 
         for parameter in signature.parameters:
-            print 'GETTING PARAM FOR SIG', parameter
             dtype = self._convert_class(parameter.class_name)
             self._parameter_data_types.append(dtype)
 
