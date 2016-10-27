@@ -3,7 +3,7 @@
 export CALCITE_VER=calcite-1.8.0
 export CALCITE_DIR=calcite
 
-rm -rf phoenixdb/schema/$CALCITE_DIR
+rm -rf phoenixdb/$CALCITE_DIR
 rm -rf calcite-tmp
 
 git init calcite-tmp
