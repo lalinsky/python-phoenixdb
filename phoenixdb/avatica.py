@@ -22,7 +22,6 @@ import math
 import logging
 import urlparse
 import time
-from decimal import Decimal
 from HTMLParser import HTMLParser
 from phoenixdb import errors
 from phoenixdb.calcite import requests_pb2, common_pb2, responses_pb2
@@ -85,9 +84,9 @@ def raise_sql_error(code, sqlstate, message):
 
 
 def parse_and_raise_sql_error(message):
-    match = re.match(r'^(?:([^ ]+): )?ERROR (\d+) \(([0-9A-Z]{5})\): (.*?)$', message)
-    if match is not None:
-        exception, code, sqlstate, message = match.groups()
+    match = re.findall(r'(?:([^ ]+): )?ERROR (\d+) \(([0-9A-Z]{5})\): (.*?) ->', message)
+    if match is not None and len(match):
+        exception, code, sqlstate, message = match[0]
         raise_sql_error(int(code), sqlstate, message)
 
 
@@ -104,27 +103,12 @@ def parse_error_protobuf(text):
     message = common_pb2.WireMessage()
     message.ParseFromString(text)
 
-    error = responses_pb2.ErrorResponse()
-    error.ParseFromString(message.wrapped_message)
+    err = responses_pb2.ErrorResponse()
+    err.ParseFromString(message.wrapped_message)
 
-    # TODO all of these fields exist
-    # error.error_code
-    # error.error_message
-    # error.exceptions
-    # error.has_exceptions
-    # error.metadata
-    # error.severity
-    # error.sql_state
-    if error.has_exceptions:
-        raise errors.InternalError(error.exceptions)
-    raise errors.InternalError(error.error_message)
-
-
-AVATICA_1_2_0 = (1, 2, 0)
-AVATICA_1_3_0 = (1, 3, 0)
-AVATICA_1_4_0 = (1, 4, 0)
-AVATICA_1_5_0 = (1, 5, 0)
-AVATICA_1_6_0 = (1, 6, 0)
+    parse_and_raise_sql_error(err.error_message)
+    raise_sql_error(err.error_code, err.sql_state, err.error_message)
+    raise errors.InternalError(err.error_message)
 
 
 class AvaticaClient(object):
