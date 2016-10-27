@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 ColumnDescription = collections.namedtuple('ColumnDescription', 'name type_code display_size internal_size precision scale null_ok')
 """Named tuple for representing results from :attr:`Cursor.description`."""
 
+import pdb
 
 class Cursor(object):
     """Database cursor for executing queries and iterating over results.
@@ -107,16 +108,15 @@ class Cursor(object):
         if self._signature is None:
             return None
         description = []
-        for column in self._signature['columns']:
-            # TODO
+        for column in self._signature.columns:
             description.append(ColumnDescription(
-                column['columnName'],
-                column['type']['name'],
-                column['displaySize'],
+                column.column_name,
+                column.type.name,
+                column.display_size,
                 None,
-                column['precision'],
-                column['scale'],
-                bool(column['nullable']),
+                column.precision,
+                column.scale,
+                None if column.nullable == 2 else bool(column.nullable),
             ))
         return description
 
