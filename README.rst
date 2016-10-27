@@ -39,32 +39,6 @@ used the same way you would use any other SQL database from Python, for example:
     cursor.execute("SELECT * FROM users")
     print cursor.fetchall()
 
-Phoenix versions
-----------------
-
-Multiple Phoenix versions are supported, but because there is no way in the protocol
-to determine the version at runtime, you need to provide the version of Avatica
-used in the Phoenix version that you are using. Below is a table of the correct
-versions for the official Phoenix releases.
-
-===============  ===============  ================================
-Phoenix version  Avatica version  Connection URL
-===============  ===============  ================================
-4.4              1.2              ``http://localhost:8765/?v=1.2``
-4.5              1.3              ``http://localhost:8765/?v=1.3``
-4.6              1.3              ``http://localhost:8765/?v=1.3``
-4.7              1.6              ``http://localhost:8765/?v=1.6``
-===============  ===============  ================================
-
-Phoenix 4.7 uses a serialization based on Protocol Buffers (proto3) by default.
-This version of Protocol Buffers does not even have a stable release
-and is not generally available on Linux distributions.
-
-This library only supports the older JSON serialization. In order for the library
-to work with Phoenix 4.7, you need to start the query server like this::
-
-    ./bin/queryserver.py start -Dphoenix.queryserver.serialization=JSON
-
 Setting up a development environment
 ------------------------------------
 
