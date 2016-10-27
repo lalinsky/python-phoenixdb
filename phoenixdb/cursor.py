@@ -14,11 +14,7 @@
 
 import logging
 import collections
-import base64
-import datetime
-from decimal import Decimal
-# TODO what are the other types used for, other than tests?
-from phoenixdb.types import Binary
+from phoenixdb.types import TypeHelper
 from phoenixdb.errors import OperationalError, NotSupportedError, ProgrammingError, InternalError
 from phoenixdb.calcite import common_pb2
 
@@ -29,35 +25,6 @@ logger = logging.getLogger(__name__)
 # TODO this can probably be replaced
 ColumnDescription = collections.namedtuple('ColumnDescription', 'name type_code display_size internal_size precision scale null_ok')
 """Named tuple for representing results from :attr:`Cursor.description`."""
-
-
-def time_from_java_sql_time(n):
-    dt = datetime.datetime(1970, 1, 1) + datetime.timedelta(milliseconds=n)
-    return dt.time()
-
-
-def time_to_java_sql_time(t):
-    return ((t.hour * 60 + t.minute) * 60 + t.second) * 1000 + t.microsecond / 1000
-
-
-def date_from_java_sql_date(n):
-    return datetime.date(1970, 1, 1) + datetime.timedelta(days=n)
-
-
-def date_to_java_sql_date(d):
-    if isinstance(d, datetime.datetime):
-        d = d.date()
-    td = d - datetime.date(1970, 1, 1)
-    return td.days
-
-
-def datetime_from_java_sql_timestamp(n):
-    return datetime.datetime(1970, 1, 1) + datetime.timedelta(milliseconds=n)
-
-
-def datetime_to_java_sql_timestamp(d):
-    td = d - datetime.datetime(1970, 1, 1)
-    return td.microseconds / 1000 + (td.seconds + td.days * 24 * 3600) * 1000
 
 
 class Cursor(object):
@@ -158,130 +125,20 @@ class Cursor(object):
             self._connection._client.closeStatement(self._connection._id, self._id)
         self._id = id
 
-    def _convert_class(self, class_name):
-        """Converts a given Java class name.
-
-        :param class_name:
-            The JDBC class name.
-
-        :returns: tuple ``(rep, field_name, cast_type, mutate_type)``
-            WHERE
-            ``rep`` is a ``common_pb2.Rep`` type
-            ``field_name`` is the field name in ``common_pb2.TypedValue``
-            ``cast_type`` is the method to cast the JDBC value to the Python value
-            ``mutate_type`` is the method to mutate the Python value to the JDBC value
-        """
-        rep = None
-        field_name = None
-        cast_type = None
-        mutate_type = None
-
-        # TODO move this to a separate class?
-        if class_name == 'java.lang.String':
-            rep = common_pb2.STRING
-            field_name = 'string_value'
-            cast_type = str
-        elif class_name == 'java.math.BigDecimal':
-            rep = common_pb2.BIG_DECIMAL
-            field_name = 'string_value'
-            cast_type = Decimal
-        elif class_name == 'java.lang.Boolean':
-            rep = common_pb2.BOOLEAN
-            field_name = 'boolean_value'
-            cast_type = bool
-        elif class_name == 'java.lang.Byte':
-            rep = common_pb2.BYTE
-            field_name = 'number_value'
-            cast_type = bytes
-        elif class_name == 'java.lang.Short':
-            rep = common_pb2.SHORT
-            field_name = 'number_value'
-            cast_type = int
-        elif class_name == 'java.lang.Integer':
-            rep = common_pb2.INTEGER
-            field_name = 'number_value'
-            cast_type = int
-        elif class_name == 'java.lang.Long':
-            rep = common_pb2.LONG
-            field_name = 'number_value'
-            cast_type = int
-        elif class_name == 'java.lang.Float':
-            rep = common_pb2.FLOAT
-            field_name = 'double_value'
-            cast_type = float
-        elif class_name == 'java.lang.Double':
-            rep = common_pb2.DOUBLE
-            field_name = 'double_value'
-            cast_type = float
-        elif class_name == '[B':
-            rep = common_pb2.BYTE_STRING
-            field_name = 'bytes_value'
-            cast_type = base64.b64decode
-            mutate_type = Binary
-        elif class_name == 'java.sql.Date':
-            rep = common_pb2.JAVA_SQL_DATE
-            field_name = 'number_value'
-            cast_type = date_from_java_sql_date
-            mutate_type = date_to_java_sql_date
-        elif class_name == 'java.sql.Time':
-            rep = common_pb2.JAVA_SQL_TIME
-            field_name = 'number_value'
-            cast_type = time_from_java_sql_time
-            mutate_type = time_to_java_sql_time
-        elif class_name == 'java.sql.Timestamp':
-            rep = common_pb2.JAVA_SQL_TIMESTAMP
-            field_name = 'number_value'
-            cast_type = datetime_from_java_sql_timestamp
-            mutate_type = datetime_to_java_sql_timestamp
-        # TODO should this be org.apache.phoenix.schema.types.PhoenixArray
-        # TODO arrays and structs are handled differently
-        #elif class_name == 'java.lang.Array':
-        #    rep = common_pb2.ARRAY
-        #elif class_name == 'java.lang.Struct':
-        #    rep = common_pb2.STRUCT
-        else:
-            rep = common_pb2.OBJECT
-
-        return rep, field_name, cast_type, mutate_type
-
     def _set_signature(self, signature):
         self._signature = signature
         self._column_data_types = []
         self._parameter_data_types = []
         if signature is None:
             return
-        identity = lambda value: value
 
         for i, column in enumerate(signature.columns):
-            dtype = self._convert_class(column.column_class_name)
+            dtype = TypeHelper.from_rep(column.type.rep)
             self._column_data_types.append(dtype)
 
         for parameter in signature.parameters:
-            dtype = self._convert_class(parameter.class_name)
+            dtype = TypeHelper.from_phoenix(parameter.type_name)
             self._parameter_data_types.append(dtype)
-
-    def _transform_parameters(self, parameters):
-        typed_parameters = []
-        for value, data_type in zip(parameters, self._parameter_data_types):
-            typed_value = common_pb2.TypedValue()
-
-            if value is None:
-                typed_value.null = True
-                typed_value.type = common_pb2.NULL
-            else:
-                typed_value.null = False
-
-                # use the mutator function
-                if data_type[3] is not None:
-                    value = data_type[3](value)
-
-                # set the Rep field
-                typed_value.type = data_type[0]
-
-                # set the field_name to the value
-                setattr(typed_value, data_type[1], value)
-            typed_parameters.append(typed_value)
-        return typed_parameters
 
     def _set_frame(self, frame):
         self._frame = frame
@@ -308,6 +165,28 @@ class Cursor(object):
             self._set_signature(result.signature)
             self._set_frame(result.first_frame)
             self._updatecount = result.update_count
+
+    def _transform_parameters(self, parameters):
+        typed_parameters = []
+        for value, data_type in zip(parameters, self._parameter_data_types):
+            field_name, rep, mutate = data_type
+            typed_value = common_pb2.TypedValue()
+
+            if value is None:
+                typed_value.null = True
+                typed_value.type = common_pb2.NULL
+            else:
+                typed_value.null = False
+
+                # use the mutator function
+                if mutate is not None:
+                    value = mutate(value)
+
+                typed_value.type = rep
+                setattr(typed_value, field_name, value)
+
+            typed_parameters.append(typed_value)
+        return typed_parameters
 
     def execute(self, operation, parameters=None):
         if self._closed:
@@ -345,6 +224,38 @@ class Cursor(object):
                 self._transform_parameters(parameters),
                 maxRowCount=0)
 
+    def _transform_row(self, row):
+        """Transforms a Row into Python values.
+
+        :param row:
+            A ``common_pb2.Row`` object.
+
+        :returns:
+            A list of values casted into the correct Python types.
+        """
+        tmp_row = []
+
+        for i, column in enumerate(row.value):
+            # TODO handle arrays, structs
+            if column.has_array_value:
+                pass
+            elif column.scalar_value.null:
+                tmp_row.append(None)
+            else:
+                field_name, cast = self._column_data_types[i]
+
+                # get the value from the field_name
+                # TODO handle None
+                value = getattr(column.scalar_value, field_name)
+
+                # cast the value
+                # TODO try/catch the casting
+                if cast is not None:
+                    value = cast(value)
+
+                tmp_row.append(value)
+        return tmp_row
+
     def fetchone(self):
         if self._frame is None:
             raise ProgrammingError('no select statement was executed')
@@ -358,36 +269,6 @@ class Cursor(object):
             if not self._frame.done:
                 self._fetch_next_frame()
         return row
-
-    def _transform_row(self, row):
-        """Transforms a Row into Python values.
-
-        :param row:
-            A ``common_pb2.Row`` object.
-
-        :returns:
-            A list of values casted into the correct Python types.
-        """
-        tmp = []
-
-        for i, column in enumerate(row.value):
-            # TODO handle arrays, structs
-            if column.has_array_value:
-                pass
-            elif column.scalar_value.null:
-                tmp.append(None)
-            else:
-                dtype = self._column_data_types[i]
-
-                # get the value from the field_name
-                value = getattr(column.scalar_value, dtype[1])
-
-                # cast the value
-                # TODO try/catch the casting
-                value = dtype[2](value)
-
-                tmp.append(value)
-        return tmp
 
     def fetchmany(self, size=None):
         if size is None:
