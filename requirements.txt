@@ -1,3 +1,2 @@
 -e git+https://bitbucket.org/lalinsky/python-sqlline.git#egg=sqlline
 nose
-protobuf
