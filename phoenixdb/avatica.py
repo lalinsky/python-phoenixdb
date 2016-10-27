@@ -18,7 +18,6 @@ import re
 import socket
 import httplib
 import pprint
-import json
 import math
 import logging
 import urlparse
@@ -26,8 +25,7 @@ import time
 from decimal import Decimal
 from HTMLParser import HTMLParser
 from phoenixdb import errors
-# TODO conditionally import based on the connection string
-from phoenixdb.schema.calcite1_8 import requests_pb2, common_pb2, responses_pb2
+from phoenixdb.calcite import requests_pb2, common_pb2, responses_pb2
 
 __all__ = ['AvaticaClient']
 
@@ -138,33 +136,13 @@ class AvaticaClient(object):
     to a server using :func:`phoenixdb.connect`.
     """
 
-    def __init__(self, url, version=None, max_retries=None):
+    def __init__(self, url, max_retries=None):
         """Constructs a new client object.
 
         :param url:
             URL of an Avatica RPC server.
-        :param version:
-            Version of the Avarica RPC server.
         """
         self.url = parse_url(url)
-        if version is not None:
-            self.version = version
-        else:
-            self.version = AVATICA_1_3_0
-            query = urlparse.parse_qs(self.url.query)
-            for v in query.get('v', []):
-                if v in ('1.2.0', '1.2'):
-                    self.version = AVATICA_1_2_0
-                elif v in ('1.3.0', '1.3'):
-                    self.version = AVATICA_1_3_0
-                elif v in ('1.4.0', '1.4'):
-                    self.version = AVATICA_1_4_0
-                elif v in ('1.5.0', '1.5'):
-                    self.version = AVATICA_1_5_0
-                elif v in ('1.6.0', '1.6'):
-                    self.version = AVATICA_1_6_0
-                else:
-                    raise errors.ProgrammingError('Unknown Avatica version')
         self.max_retries = max_retries if max_retries is not None else 3
         self.connection = None
 

@@ -20,8 +20,7 @@ from decimal import Decimal
 # TODO what are the other types used for, other than tests?
 from phoenixdb.types import Binary
 from phoenixdb.errors import OperationalError, NotSupportedError, ProgrammingError, InternalError
-# TODO conditionally import based on the connection string
-from phoenixdb.schema.calcite1_8 import requests_pb2, common_pb2, responses_pb2
+from phoenixdb.calcite import common_pb2
 
 __all__ = ['Cursor', 'ColumnDescription']
 
