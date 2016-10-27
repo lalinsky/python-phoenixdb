@@ -22,11 +22,8 @@ __all__ = ['Cursor', 'ColumnDescription']
 
 logger = logging.getLogger(__name__)
 
-# TODO this can probably be replaced
 ColumnDescription = collections.namedtuple('ColumnDescription', 'name type_code display_size internal_size precision scale null_ok')
 """Named tuple for representing results from :attr:`Cursor.description`."""
-
-import pdb
 
 class Cursor(object):
     """Database cursor for executing queries and iterating over results.
@@ -302,13 +299,13 @@ class Cursor(object):
         """Read-only attribute providing access to the :class:`Connection <phoenixdb.connection.Connection>` object this cursor was created from."""
         return self._connection
 
-
     @property
     def rowcount(self):
         """Read-only attribute specifying the number of rows affected by
         the last executed DML statement or -1 if the number cannot be
         determined. Note that this will always be set to -1 for select
         queries."""
+        # TODO instead of -1, this ends up being set to unsigned max_long
         return self._updatecount
 
     @property
@@ -322,5 +319,5 @@ class Cursor(object):
         row indexed by :attr:`rownumber` in that sequence.
         """
         if self._frame is not None and self._pos is not None:
-            return self._frame['offset'] + self._pos
+            return self._frame.offset + self._pos
         return self._pos
