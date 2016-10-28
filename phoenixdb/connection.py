@@ -116,10 +116,10 @@ class Connection(object):
         if readonly is not None:
             props['readOnly'] = bool(readonly)
         props = self._client.connectionSync(self._id, props)
-        self._autocommit = props.conn_props.auto_commit
-        self._readonly = props.conn_props.read_only
+        self._autocommit = props.auto_commit
+        self._readonly = props.read_only
         # TODO this is added
-        self._transactionisolation = props.conn_props.transaction_isolation
+        self._transactionisolation = props.transaction_isolation
 
     @property
     def autocommit(self):
@@ -131,7 +131,7 @@ class Connection(object):
         if self._closed:
             raise ProgrammingError('the connection is already closed')
         props = self._client.connectionSync(self._id, {'autoCommit': bool(value)})
-        self._autocommit = props['autoCommit']
+        self._autocommit = props.auto_commit
 
     @property
     def readonly(self):
@@ -143,7 +143,7 @@ class Connection(object):
         if self._closed:
             raise ProgrammingError('the connection is already closed')
         props = self._client.connectionSync(self._id, {'readOnly': bool(value)})
-        self._readonly = props['readOnly']
+        self._readonly = props.read_only
 
     # TODO add properties?
     # @property

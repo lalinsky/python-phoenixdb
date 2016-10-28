@@ -3,7 +3,6 @@ import datetime
 import phoenixdb
 from decimal import Decimal
 from phoenixdb.tests import DatabaseTestCase
-from phoenixdb.avatica import AVATICA_1_2_0, AVATICA_1_3_0, AVATICA_1_4_0
 
 
 class TypesTest(DatabaseTestCase):
@@ -20,12 +19,12 @@ class TypesTest(DatabaseTestCase):
             cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
             self.assertEqual(cursor.description[1].type_code, phoenixdb.NUMBER)
             self.assertEqual(cursor.fetchall(), [[1, 1], [2, None], [3, 1], [4, None], [5, min_value], [6, max_value]])
-            if self.conn._client.version >= AVATICA_1_4_0:
-                self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, {})".format(min_value - 1))
-                self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, {})".format(max_value + 1))
-                # XXX The server silently truncates the values
-                #self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, ?)", [min_value - 1])
-                #self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, ?)", [max_value + 1])
+
+            self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, {})".format(min_value - 1))
+            self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, {})".format(max_value + 1))
+            # XXX The server silently truncates the values
+            #self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, ?)", [min_value - 1])
+            #self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, ?)", [max_value + 1])
 
     def test_integer(self):
         self.checkIntType("integer", -2147483648, 2147483647)
@@ -84,8 +83,6 @@ class TypesTest(DatabaseTestCase):
         self.checkFloatType("unsigned_double", 0, 1.7976931348623158E+308)
 
     def test_decimal(self):
-        if self.conn._client.version < AVATICA_1_4_0:
-            raise unittest.SkipTest('decimal only works correctly with Calcite >= 1.4.0: https://issues.apache.org/jira/browse/CALCITE-795')
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val decimal(8,3)")
         with self.conn.cursor() as cursor:
             cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, 33333.333)")
@@ -224,8 +221,6 @@ class TypesTest(DatabaseTestCase):
             self.assertEqual(cursor.fetchall(), [[1, 'abc'], [2, None], [3, 'abc'], [4, None], [5, None], [6, None]])
 
     def test_varchar_very_long(self):
-        if self.conn._client.version < AVATICA_1_4_0:
-            raise unittest.SkipTest('long requests only work with Calcite >= 1.4.0: https://issues.apache.org/jira/browse/CALCITE-780')
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val varchar")
         with self.conn.cursor() as cursor:
             value = '1234567890' * 1000
@@ -305,4 +300,3 @@ class TypesTest(DatabaseTestCase):
                 [1, [1,2]],
                 [2, [2,3]],
             ])
-

@@ -304,7 +304,7 @@ class AvaticaClient(object):
         response_data = self._apply(request)
         response = responses_pb2.ConnectionSyncResponse()
         response.ParseFromString(response_data)
-        return response
+        return response.conn_props
 
     def openConnection(self, connectionId, info=None):
         """Opens a new connection.
@@ -452,7 +452,8 @@ class AvaticaClient(object):
         request = requests_pb2.ExecuteRequest()
         request.statementHandle.id = statementId
         request.statementHandle.connection_id = connectionId
-        request.parameter_values.extend(parameterValues)
+        if parameterValues is not None:
+            request.parameter_values.extend(parameterValues)
         request.has_parameter_values = parameterValues is not None
         request.statementHandle.signature.CopyFrom(signature)
         # TODO extra param in 1.8?

@@ -22,6 +22,9 @@ __all__ = ['Cursor', 'ColumnDescription']
 
 logger = logging.getLogger(__name__)
 
+# TODO see note in Cursor.rowcount()
+MAX_INT = 2 ** 64 - 1
+
 ColumnDescription = collections.namedtuple('ColumnDescription', 'name type_code display_size internal_size precision scale null_ok')
 """Named tuple for representing results from :attr:`Cursor.description`."""
 
@@ -102,7 +105,7 @@ class Cursor(object):
 
     @property
     def description(self):
-        if self._signature is None:
+        if self._signature is None or self._signature.SerializeToString() == '':
             return None
         description = []
         for column in self._signature.columns:
@@ -141,12 +144,11 @@ class Cursor(object):
         self._frame = frame
         self._pos = None
 
-        if frame is not None:
+        if frame is not None and frame.SerializeToString() != '':
             if frame.rows:
                 self._pos = 0
-            # TODO although 'rows' is empty, 'done' seems to always be False...why?
-            #elif not frame.done:
-            #    raise InternalError('got an empty frame, but the statement is not done yet')
+            elif not frame.done:
+                raise InternalError('got an empty frame, but the statement is not done yet')
 
     def _fetch_next_frame(self):
         offset = self._frame.offset + len(self._frame.rows)
@@ -214,11 +216,11 @@ class Cursor(object):
         self._set_frame(None)
         statement = self._connection._client.prepare(self._connection._id,
             operation, maxRowCount=0)
-        self._set_id(statement['id'])
-        self._set_signature(statement['signature'])
+        self._set_id(statement.id)
+        self._set_signature(statement.signature)
         for parameters in seq_of_parameters:
             self._connection._client.execute(self._connection._id, self._id,
-                self._transform_parameters(parameters),
+            statement.signature, self._transform_parameters(parameters),
                 maxRowCount=0)
 
     def _transform_row(self, row):
@@ -305,7 +307,9 @@ class Cursor(object):
         the last executed DML statement or -1 if the number cannot be
         determined. Note that this will always be set to -1 for select
         queries."""
-        # TODO instead of -1, this ends up being set to unsigned max_long
+        # TODO instead of -1, this ends up being set to Integer.MAX_VALUE
+        if self._updatecount == MAX_INT:
+            return -1
         return self._updatecount
 
     @property

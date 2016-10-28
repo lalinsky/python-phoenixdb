@@ -20,7 +20,8 @@ from phoenixdb.calcite import common_pb2
 
 __all__ = [
     'Date', 'Time', 'Timestamp', 'DateFromTicks', 'TimeFromTicks', 'TimestampFromTicks',
-    'Binary', 'REP_TYPES', 'REP_TYPES_MAP', 'PHOENIX_PARAMETERS', 'PHOENIX_PARAMETERS_MAP',
+    'Binary', 'STRING', 'BINARY', 'NUMBER', 'DATETIME', 'ROWID', 'BOOLEAN',
+    'REP_TYPES', 'REP_TYPES_MAP', 'PHOENIX_PARAMETERS', 'PHOENIX_PARAMETERS_MAP',
     'TypeHelper',
 ]
 
@@ -93,6 +94,42 @@ def datetime_from_java_sql_timestamp(n):
 def datetime_to_java_sql_timestamp(d):
     td = d - datetime.datetime(1970, 1, 1)
     return td.microseconds / 1000 + (td.seconds + td.days * 24 * 3600) * 1000
+
+
+class ColumnType(object):
+
+    def __init__(self, eq_types):
+        self.eq_types = tuple(eq_types)
+        self.eq_types_set = set(eq_types)
+
+    def __cmp__(self, other):
+        if other in self.eq_types_set:
+            return 0
+        if other < self.eq_types:
+            return 1
+        else:
+            return -1
+
+
+STRING = ColumnType(['VARCHAR', 'CHAR'])
+"""Type object that can be used to describe string-based columns."""
+
+BINARY = ColumnType(['BINARY', 'VARBINARY'])
+"""Type object that can be used to describe (long) binary columns."""
+
+NUMBER = ColumnType(['INTEGER', 'UNSIGNED_INT', 'BIGINT', 'UNSIGNED_LONG', 'TINYINT', 'UNSIGNED_TINYINT', 'SMALLINT', 'UNSIGNED_SMALLINT', 'FLOAT', 'UNSIGNED_FLOAT', 'DOUBLE', 'UNSIGNED_DOUBLE', 'DECIMAL'])
+"""Type object that can be used to describe numeric columns."""
+
+DATETIME = ColumnType(['TIME', 'DATE', 'TIMESTAMP', 'UNSIGNED_TIME', 'UNSIGNED_DATE', 'UNSIGNED_TIMESTAMP'])
+"""Type object that can be used to describe date/time columns."""
+
+ROWID = ColumnType([])
+"""Only implemented for DB API 2.0 compatibility, not used."""
+
+BOOLEAN = ColumnType(['BOOLEAN'])
+"""Type object that can be used to describe boolean columns. This is a phoenixdb-specific extension."""
+
+# XXX ARRAY
 
 
 REP_TYPES = {
