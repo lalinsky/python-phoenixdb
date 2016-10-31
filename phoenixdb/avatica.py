@@ -178,8 +178,10 @@ class AvaticaClient(object):
 
     def _apply(self, request_data, expected_response_type=None):
         logger.debug("Sending request\n%s", pprint.pformat(request_data))
+
+        request_name = request_data.__class__.__name__
         message = common_pb2.WireMessage()
-        message.name = 'org.apache.calcite.avatica.proto.Requests${}'.format(request_data.__class__.__name__)
+        message.name = 'org.apache.calcite.avatica.proto.Requests${}'.format(request_name)
         message.wrapped_message = request_data.SerializeToString()
         body = message.SerializeToString()
         headers = {'content-type': 'application/x-google-protobuf'}
@@ -191,9 +193,8 @@ class AvaticaClient(object):
             logger.debug("Received response\n%s", response_body)
             if '<html>' in response_body:
                 parse_error_page(response_body)
-            # TODO does the response ever send x-google-protobuf?
-            # TODO seems to only send octet-stream
             else:
+                # assume the response is in protobuf format
                 parse_error_protobuf(response_body)
             raise errors.InterfaceError('RPC request returned invalid status code', response.status)
 
@@ -202,15 +203,12 @@ class AvaticaClient(object):
 
         logger.debug("Received response\n%s", message.name)
 
-        # TODO is this needed if only octet-stream is returned?
-        # if 'response' not in response_data:
-        #     raise errors.InterfaceError('missing response type')
-        #
-        # if expected_response_type is None:
-        #     expected_response_type = request_data['request']
-        #
-        # if response_data['response'] != expected_response_type:
-        #     raise errors.InterfaceError('unexpected response type "{}"'.format(response_data['response']))
+        if expected_response_type is None:
+            expected_response_type = request_name.replace('Request', 'Response')
+
+        expected_response_type = 'org.apache.calcite.avatica.proto.Responses$' + expected_response_type
+        if message.name != expected_response_type:
+            raise errors.InterfaceError('unexpected response type "{}"'.format(message.name))
 
         return message.wrapped_message
 
@@ -392,7 +390,7 @@ class AvaticaClient(object):
         # TODO additional param in 1.8?
         # request.max_rows_total = maxRowsTotal
 
-        response_data = self._apply(request)
+        response_data = self._apply(request, 'ExecuteResponse')
         response = responses_pb2.ExecuteResponse()
         response.ParseFromString(response_data)
         return response.results
