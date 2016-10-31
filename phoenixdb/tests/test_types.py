@@ -169,7 +169,6 @@ class TypesTest(DatabaseTestCase):
                 [2, datetime.datetime(2015, 7, 12, 13, 1, 2, 123000)],
             ])
 
-    @unittest.skip("broken")
     def test_date_null(self):
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val date")
         with self.conn.cursor() as cursor:
@@ -241,7 +240,6 @@ class TypesTest(DatabaseTestCase):
             self.assertEqual(cursor.fetchall(), [[1, 'ab'], [2, None], [3, 'ab'], [4, None], [5, None], [6, None]])
             self.assertRaises(self.conn.DataError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, 'abc')")
 
-    @unittest.skip("broken")
     def test_char_null(self):
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val char(2)")
         with self.conn.cursor() as cursor:
@@ -250,7 +248,7 @@ class TypesTest(DatabaseTestCase):
             cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (5, '')")
             cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (6, ?)", [''])
             cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
-            self.assertEqual(cursor.fetchall(), [[1, 'abc'], [2, None], [3, 'abc'], [4, None], [5, None], [6, None]])
+            self.assertEqual(cursor.fetchall(), [[2, None], [4, None], [5, None], [6, None]])
             self.assertRaises(self.conn.DataError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, 'abc')")
 
     def test_char(self):
