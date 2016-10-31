@@ -118,7 +118,6 @@ class Connection(object):
         props = self._client.connectionSync(self._id, props)
         self._autocommit = props.auto_commit
         self._readonly = props.read_only
-        # TODO this is added
         self._transactionisolation = props.transaction_isolation
 
     @property
@@ -145,11 +144,16 @@ class Connection(object):
         props = self._client.connectionSync(self._id, {'readOnly': bool(value)})
         self._readonly = props.read_only
 
-    # TODO add properties?
-    # @property
-    # def transactionisolation(self): pass
-    # @readonly.setter
-    # def transactionisolation(self, value): pass
+    @property
+    def transactionisolation(self):
+        return self._transactionisolation
+
+    @readonly.setter
+    def transactionisolation(self, value):
+        if self._closed:
+            raise ProgrammingError('the connection is already closed')
+        props = self._client.connectionSync(self._id, {'transactionIsolation': bool(value)})
+        self._transactionisolation = props.transaction_isolation
 
 for name in errors.__all__:
     setattr(Connection, name, getattr(errors, name))

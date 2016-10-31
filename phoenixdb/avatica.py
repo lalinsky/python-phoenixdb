@@ -212,58 +212,57 @@ class AvaticaClient(object):
 
         return message.wrapped_message
 
-    def getCatalogs(self):
-        # TODO this isn't used anywhere
-        request = requests_pb2.CatalogRequest()
-        # TODO needs connection_id
-        # request.connection_id = self.connection_id
-        # TODO there is no responses_pb2.CatalogResponse
+    def getCatalogs(self, connectionId):
+        request = requests_pb2.CatalogsRequest()
+        request.connection_id = connectionId
         return self._apply(request)
 
-
-    def getSchemas(self, catalog=None, schemaPattern=None):
-        # TODO this isn't used anywhere
+    def getSchemas(self, connectionId, catalog=None, schemaPattern=None):
         request = requests_pb2.SchemasRequest()
-        # TODO needs connection_id
-        # request.connection_id
-        # TODO these two can't be None
-        # request.catalog = catalog
-        # request.schema_pattern = schemaPattern
-        # TODO there is no responses_pb2.SchemasResponse
+        request.connection_id = connectionId
+        if catalog is not None:
+            request.catalog = catalog
+        if schemaPattern is not None:
+            request.schema_pattern = schemaPattern
         return self._apply(request)
 
-    def getTables(self, catalog=None, schemaPattern=None, tableNamePattern=None, typeList=None):
-        # TODO this isn't used anywhere
+    def getTables(self, connectionId, catalog=None, schemaPattern=None, tableNamePattern=None, typeList=None):
         request = requests_pb2.TablesRequest()
-        # TODO needs connection_id
-        # request.connection_id = connectionId
-        # TODO these can't be None
-        request.catalog = catalog
-        request.schema_pattern = schemaPattern
-        request.table_name_pattern = tableNamePattern
-        request.type_list = typeList
-        # TODO find response type
+        request.connection_id = connectionId
+        if catalog is not None:
+            request.catalog = catalog
+        if schemaPattern is not None:
+            request.schema_pattern = schemaPattern
+        if tableNamePattern is not None:
+            request.table_name_pattern = tableNamePattern
+        if typeList is not None:
+            request.type_list = typeList
+        if typeList is not None:
+            request.type_list.extend(typeList)
+        request.has_type_list = typeList is not None
         return self._apply(request)
 
-    def getColumns(self, catalog=None, schemaPattern=None, tableNamePattern=None, columnNamePattern=None):
-        # TODO this isn't used
-        request = {
-            'request': 'getColumns',
-            'catalog': catalog,
-            'schemaPattern': schemaPattern,
-            'tableNamePattern': tableNamePattern,
-            'columnNamePattern': columnNamePattern,
-        }
+    def getColumns(self, connectionId, catalog=None, schemaPattern=None, tableNamePattern=None, columnNamePattern=None):
+        request = requests_pb2.ColumnsRequest()
+        request.connection_id = connectionId
+        if catalog is not None:
+            request.catalog = catalog
+        if schemaPattern is not None:
+            request.schema_pattern = schemaPattern
+        if tableNamePattern is not None:
+            request.table_name_pattern = tableNamePattern
+        if columnNamePattern is not None:
+            request.column_name_pattern = columnNamePattern
         return self._apply(request)
 
-    def getTableTypes(self):
-        # TODO this isn't used
-        request = {'request': 'getTableTypes'}
+    def getTableTypes(self, connectionId):
+        request = requests_pb2.TableTypesRequest()
+        request.connection_id = connectionId
         return self._apply(request)
 
-    def getTypeInfo(self):
-        # TODO this isn't used
-        request = {'request': 'getTypeInfo'}
+    def getTypeInfo(self, connectionId):
+        request = requests_pb2.TypeInfoRequest()
+        request.connection_id = connectionId
         return self._apply(request)
 
     def connectionSync(self, connectionId, connProps=None):
@@ -276,28 +275,20 @@ class AvaticaClient(object):
             Dictionary with the properties that should be changed.
 
         :returns:
-            Dictionary with the current properties.
+            A ``common_pb2.ConnectionProperties`` object.
         """
         if connProps is None:
             connProps = {}
 
         request = requests_pb2.ConnectionSyncRequest()
         request.connection_id = connectionId
-        # TODO previously defaulted to None...ok for bool?
         request.conn_props.auto_commit = connProps.get('autoCommit', False)
-        # TODO new param...why is this needed?
         request.conn_props.has_auto_commit = True
-        # TODO previously defaulted to None...ok for bool?
         request.conn_props.read_only = connProps.get('readOnly', False)
-        # TODO new param...why is this needed?
         request.conn_props.has_read_only = True
-        # TODO set this to 0, 1, 2, 4, 8?
         request.conn_props.transaction_isolation = connProps.get('transactionIsolation', 0)
-        # TODO set catalog and schema?
         request.conn_props.catalog = connProps.get('catalog', '')
         request.conn_props.schema = connProps.get('schema', '')
-        # TODO also has this field
-        # request.conn_props.is_dirty
 
         response_data = self._apply(request)
         response = responses_pb2.ConnectionSyncResponse()
@@ -312,7 +303,6 @@ class AvaticaClient(object):
         """
         request = requests_pb2.OpenConnectionRequest()
         request.connection_id = connectionId
-
         if info is not None:
             request.info = info
 
@@ -328,7 +318,6 @@ class AvaticaClient(object):
         """
         request = requests_pb2.CloseConnectionRequest()
         request.connection_id = connectionId
-
         self._apply(request)
 
     def createStatement(self, connectionId):
@@ -346,7 +335,6 @@ class AvaticaClient(object):
         response_data = self._apply(request)
         response = responses_pb2.CreateStatementResponse()
         response.ParseFromString(response_data)
-
         return response.statement_id
 
     def closeStatement(self, connectionId, statementId):
@@ -387,8 +375,6 @@ class AvaticaClient(object):
         request.sql = sql
         request.max_row_count = maxRowCount
         request.statement_id = statementId
-        # TODO additional param in 1.8?
-        # request.max_rows_total = maxRowsTotal
 
         response_data = self._apply(request, 'ExecuteResponse')
         response = responses_pb2.ExecuteResponse()
@@ -414,8 +400,6 @@ class AvaticaClient(object):
         request.connection_id = connectionId
         request.sql = sql
         request.max_row_count = maxRowCount
-        # TODO additional param in 1.8?
-        # request.max_rows_total = maxRowsTotal
 
         response_data = self._apply(request)
         response = responses_pb2.PrepareResponse()
@@ -436,7 +420,7 @@ class AvaticaClient(object):
             ID of the statement to fetch rows from.
 
         :param signature:
-            common_pb2.Signature object - TODO this is new
+            common_pb2.Signature object
 
         :param parameterValues:
             A list of parameter values, if statement is to be executed; otherwise ``None``.
@@ -454,9 +438,7 @@ class AvaticaClient(object):
             request.parameter_values.extend(parameterValues)
         request.has_parameter_values = parameterValues is not None
         request.statementHandle.signature.CopyFrom(signature)
-        # TODO extra param in 1.8?
-        # request.first_frame_max_size =
-        # TODO no maxRowCount?
+        # TODO ExecuteRequest has no max_row_count
 
         response_data = self._apply(request)
         response = responses_pb2.ExecuteResponse()
@@ -493,8 +475,6 @@ class AvaticaClient(object):
         request.statement_id = statementId
         request.offset = offset
         request.fetch_max_row_count = fetchMaxRowCount
-        # TODO extra param in 1.8?
-        # request.frame_max_size =
 
         response_data = self._apply(request)
         response = responses_pb2.FetchResponse()
