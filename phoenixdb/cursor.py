@@ -256,7 +256,7 @@ class Cursor(object):
         return tmp_row
 
     def fetchone(self):
-        if self._frame is None:
+        if self._frame is None or self._frame.SerializeToString() == '':
             raise ProgrammingError('no select statement was executed')
         if self._pos is None:
             return None
