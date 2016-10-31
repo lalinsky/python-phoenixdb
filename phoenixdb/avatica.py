@@ -471,7 +471,7 @@ class AvaticaClient(object):
             Frame data, or ``None`` if there are no more.
         """
         request = requests_pb2.FetchRequest()
-        request.connetion_id = connectionId
+        request.connection_id = connectionId
         request.statement_id = statementId
         request.offset = offset
         request.fetch_max_row_count = fetchMaxRowCount
