@@ -129,15 +129,15 @@ class Cursor(object):
         self._signature = signature
         self._column_data_types = []
         self._parameter_data_types = []
-        if signature is None:
+        if signature is None or signature.SerializeToString() == '':
             return
 
-        for i, column in enumerate(signature.columns):
-            dtype = TypeHelper.from_rep(column.type.rep)
+        for column in signature.columns:
+            dtype = TypeHelper.from_class(column.column_class_name)
             self._column_data_types.append(dtype)
 
         for parameter in signature.parameters:
-            dtype = TypeHelper.from_phoenix(parameter.type_name)
+            dtype = TypeHelper.from_class(parameter.class_name)
             self._parameter_data_types.append(dtype)
 
     def _set_frame(self, frame):
@@ -168,7 +168,7 @@ class Cursor(object):
     def _transform_parameters(self, parameters):
         typed_parameters = []
         for value, data_type in zip(parameters, self._parameter_data_types):
-            field_name, rep, mutate = data_type
+            field_name, rep, mutate_to, cast_from = data_type
             typed_value = common_pb2.TypedValue()
 
             if value is None:
@@ -178,8 +178,8 @@ class Cursor(object):
                 typed_value.null = False
 
                 # use the mutator function
-                if mutate is not None:
-                    value = mutate(value)
+                if mutate_to is not None:
+                    value = mutate_to(value)
 
                 typed_value.type = rep
                 setattr(typed_value, field_name, value)
@@ -241,7 +241,7 @@ class Cursor(object):
             elif column.scalar_value.null:
                 tmp_row.append(None)
             else:
-                field_name, cast = self._column_data_types[i]
+                field_name, rep, mutate_to, cast_from = self._column_data_types[i]
 
                 # get the value from the field_name
                 # TODO handle None
@@ -249,8 +249,8 @@ class Cursor(object):
 
                 # cast the value
                 # TODO try/catch the casting
-                if cast is not None:
-                    value = cast(value)
+                if cast_from is not None:
+                    value = cast_from(value)
 
                 tmp_row.append(value)
         return tmp_row
