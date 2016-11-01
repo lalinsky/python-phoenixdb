@@ -128,7 +128,7 @@ class Cursor(object):
     def _set_signature(self, signature):
         if signature is not None and signature.SerializeToString() == '':
             signature = None
-        
+
         self._signature = signature
         self._column_data_types = []
         self._parameter_data_types = []
@@ -237,13 +237,15 @@ class Cursor(object):
 
         :returns:
             A list of values casted into the correct Python types.
+
+        :raises:
+            NotImplementedError
         """
         tmp_row = []
 
         for i, column in enumerate(row.value):
-            # TODO handle arrays, structs
             if column.has_array_value:
-                pass
+                raise NotImplementedError('array types are not supported')
             elif column.scalar_value.null:
                 tmp_row.append(None)
             else:
