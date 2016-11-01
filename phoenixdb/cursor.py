@@ -252,11 +252,9 @@ class Cursor(object):
                 field_name, rep, mutate_to, cast_from = self._column_data_types[i]
 
                 # get the value from the field_name
-                # TODO handle None
                 value = getattr(column.scalar_value, field_name)
 
                 # cast the value
-                # TODO try/catch the casting
                 if cast_from is not None:
                     value = cast_from(value)
 

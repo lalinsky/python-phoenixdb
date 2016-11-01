@@ -143,7 +143,6 @@ JAVA_CLASSES = {
         ('java.sql.Timestamp', common_pb2.JAVA_SQL_TIMESTAMP, datetime_to_java_sql_timestamp, datetime_from_java_sql_timestamp),
     ],
     'bytes_value': [
-        # TODO base64 encoding doesn't seem necessary with protobufs
         ('[B', common_pb2.BYTE_STRING, Binary, None),
     ],
     'double_value': [
