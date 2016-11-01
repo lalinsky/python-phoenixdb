@@ -105,7 +105,7 @@ class Cursor(object):
 
     @property
     def description(self):
-        if self._signature is None or self._signature.SerializeToString() == '':
+        if self._signature is None:
             return None
         description = []
         for column in self._signature.columns:
@@ -126,10 +126,13 @@ class Cursor(object):
         self._id = id
 
     def _set_signature(self, signature):
+        if signature is not None and signature.SerializeToString() == '':
+            signature = None
+        
         self._signature = signature
         self._column_data_types = []
         self._parameter_data_types = []
-        if signature is None or signature.SerializeToString() == '':
+        if signature is None:
             return
 
         for column in signature.columns:
@@ -141,10 +144,13 @@ class Cursor(object):
             self._parameter_data_types.append(dtype)
 
     def _set_frame(self, frame):
+        if frame is not None and frame.SerializeToString() == '':
+            frame = None
+
         self._frame = frame
         self._pos = None
 
-        if frame is not None and frame.SerializeToString() != '':
+        if frame is not None:
             if frame.rows:
                 self._pos = 0
             elif not frame.done:
@@ -256,7 +262,7 @@ class Cursor(object):
         return tmp_row
 
     def fetchone(self):
-        if self._frame is None or self._frame.SerializeToString() == '':
+        if self._frame is None:
             raise ProgrammingError('no select statement was executed')
         if self._pos is None:
             return None
