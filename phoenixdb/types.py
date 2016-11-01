@@ -160,10 +160,18 @@ JAVA_CLASSES = {
         ('java.lang.Double', common_pb2.DOUBLE, float, float),
     ]
 }
-"""Groups of Rep types."""
+"""Groups of Java classes."""
 
 JAVA_CLASSES_MAP = dict( (v[0], (k, v[1], v[2], v[3])) for k in JAVA_CLASSES for v in JAVA_CLASSES[k] )
-"""Flips the available types to allow for faster lookup by Rep."""
+"""Flips the available types to allow for faster lookup by Java class.
+
+This mapping should be structured as:
+    {
+        'java.math.BigDecimal': ('string_value', common_pb2.BIG_DECIMAL, str, Decimal),),
+        ...
+        '<java class>': (<field_name>, <Rep enum>, <mutate_to function>, <cast_from function>),
+    }
+"""
 
 
 class TypeHelper(object):
@@ -173,20 +181,18 @@ class TypeHelper(object):
 
         :param klass:
             The string of the Java class for the column or parameter.
-=
+
         :returns: tuple ``(field_name, rep, mutate_to, cast_from)``
             WHERE
             ``field_name`` is the attribute in ``common_pb2.TypedValue``
             ``rep`` is the common_pb2.Rep enum
             ``mutate_to`` is the function to cast values into Phoenix values, if any
             ``cast_from`` is the function to cast from the Phoenix value to the Python value, if any
+
+        :raises:
+            NotImplementedError
         """
-        field_name = None
-        rep = None
-        mutate_to = None
-        cast_from = None
+        if klass not in JAVA_CLASSES_MAP:
+            raise NotImplementedError('type {} is not supported'.format(klass))
 
-        if klass in JAVA_CLASSES_MAP:
-            field_name, rep, mutate_to, cast_from = JAVA_CLASSES_MAP[klass]
-
-        return field_name, rep, mutate_to, cast_from
+        return JAVA_CLASSES_MAP[klass]
