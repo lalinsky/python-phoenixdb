@@ -56,15 +56,7 @@ def TimestampFromTicks(ticks):
 
 def Binary(value):
     """Constructs an object capable of holding a binary (long) string value."""
-    if isinstance(value, _BinaryString):
-        return value
-    # TODO base64 encoding doesn't seem necessary with protobufs
-    #return _BinaryString(base64.b64encode(value))
-    return _BinaryString(value)
-
-
-class _BinaryString(str):
-    pass
+    return value
 
 
 def time_from_java_sql_time(n):
