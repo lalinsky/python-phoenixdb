@@ -374,6 +374,7 @@ class AvaticaClient(object):
         request.connection_id = connectionId
         request.sql = sql
         request.max_row_count = maxRowCount
+        request.max_rows_total = -1
         request.statement_id = statementId
 
         response_data = self._apply(request, 'ExecuteResponse')
@@ -400,6 +401,7 @@ class AvaticaClient(object):
         request.connection_id = connectionId
         request.sql = sql
         request.max_row_count = maxRowCount
+        request.max_rows_total = -1
 
         response_data = self._apply(request)
         response = responses_pb2.PrepareResponse()
