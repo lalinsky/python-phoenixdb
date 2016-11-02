@@ -4,8 +4,8 @@ Phoenix database adapter for Python
 ``phoenixdb`` is a Python library for accessing the
 `Phoenix SQL database <http://phoenix.apache.org/>`_
 using the
-`remote query server <http://phoenix.apache.org/server.html>`_ introduced
-in Phoenix 4.4.  The library implements the  
+`remote query server <http://phoenix.apache.org/server.html>`_.
+The library implements the
 standard `DB API 2.0 <https://www.python.org/dev/peps/pep-0249/>`_ interface,
 which should be familiar to most Python programmers.
 
@@ -51,7 +51,7 @@ necessary requirements::
     pip install -r requirements.txt
     python setup.py develop
 
-To create or update protobuf classes, change the tag in `gen-protobuf.sh` and execute. For Calcite >= 1.6, the path changes from `avatica/src/main/protobuf` to `avatica/core/src/main/protobuf`.
+To create or update protobuf classes, change the tag in ``gen-protobuf.sh`` and execute.
 
 If you need a Phoenix server for experimenting, you can get one running
 quickly using Vagrant::
