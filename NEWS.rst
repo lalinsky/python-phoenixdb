@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 0.5
+-----------
+
+- The driver now uses the Protocol Buffers protocol instead of JSON to communicate with Avatica.
+- Dropped support for Phoenix 4.6 and older.
+
 Version 0.4
 -----------
 

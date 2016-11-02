@@ -12,7 +12,7 @@ def readme():
     with open('README.rst') as f:
         return f.read()
 
-version = "0.4"
+version = "0.5"
 
 setup(
     name="phoenixdb",
