@@ -2,27 +2,40 @@
 
 set -e
 
-# if using Phoenix <= 4.7, file names are "phoenix-<version>-HBase-<version>"
-#HBASE_VERSION=1.1.5
 #PHOENIX_VERSION=4.7.0-HBase-1.1
+PHOENIX_VERSION=4.8.1-HBase-1.2
 
-#PHOENIX_VERSION=4.4.0-HBase-1.1
-#APACHE_MIRROR=http://archive.apache.org/dist/
+case $PHOENIX_VERSION in
+4.7.*)
+    PHOENIX_NAME=phoenix
+    ;;
+4.8.*)
+    PHOENIX_NAME=apache-phoenix
+    ;;
+*)
+    echo "! Unsupported Phoenix version - $PHOENIX_VERSION"
+    exit 1
+;;
+esac
 
-# if using Phoenix >= 4.8, file names have changed to "apache-phoenix-<version>-HBase-<version>"
-HBASE_VERSION=1.2.3
-PHOENIX_VERSION=4.8.0-HBase-1.2
-
+case $PHOENIX_VERSION in
+*-HBase-1.2)
+    HBASE_VERSION=1.2.3
+    ;;
+*-HBase-1.1)
+    HBASE_VERSION=1.1.7
+    ;;
+*)
+    echo "! Unsupported HBase version - $PHOENIX_VERSION"
+    exit 1
+;;
+esac
 
 export DEBIAN_FRONTEND=noninteractive
 
-echo "> Removing chef and puppet"
-sudo apt-get -y remove chef chef-zero puppet puppet-common
-sudo apt-get -y autoremove
-
 echo "> Installing java"
 sudo apt-get -y update
-sudo apt-get -y install wget openjdk-7-jdk
+sudo apt-get -y install wget openjdk-8-jdk-headless python
 
 if [ -z "$APACHE_MIRROR" ]
 then
@@ -37,45 +50,35 @@ then
 
 	echo "> Extracting HBase"
 	sudo mkdir /opt/hbase
-	sudo chown vagrant:vagrant -R /opt/hbase
+	sudo chown ubuntu:ubuntu -R /opt/hbase
 	tar xf /tmp/hbase-$HBASE_VERSION-bin.tar.gz --strip-components=1 -C /opt/hbase
 fi
 
 if [ ! -d /opt/phoenix ]
 then
 	echo "> Downloading Phoenix $PHOENIX_VERSION"
-    # Phoenix <= 4.7
-    #wget --no-verbose -P /tmp -c -N $APACHE_MIRROR/phoenix/phoenix-$PHOENIX_VERSION/bin/phoenix-$PHOENIX_VERSION-bin.tar.gz
-    # Phoenix >= 4.8
-	wget --no-verbose -P /tmp -c -N $APACHE_MIRROR/phoenix/apache-phoenix-$PHOENIX_VERSION/bin/apache-phoenix-$PHOENIX_VERSION-bin.tar.gz
+	wget --no-verbose -P /tmp -c -N $APACHE_MIRROR/phoenix/$PHOENIX_NAME-$PHOENIX_VERSION/bin/$PHOENIX_NAME-$PHOENIX_VERSION-bin.tar.gz
 
 	echo "> Extracting Phoenix"
 	sudo mkdir /opt/phoenix
-	sudo chown vagrant:vagrant -R /opt/phoenix
-    # Phoenix <= 4.7
-    #tar xf /tmp/phoenix-$PHOENIX_VERSION-bin.tar.gz --strip-components=1 -C /opt/phoenix
-    # Phoenix >= 4.8
-	tar xf /tmp/apache-phoenix-$PHOENIX_VERSION-bin.tar.gz --strip-components=1 -C /opt/phoenix
+	sudo chown ubuntu:ubuntu -R /opt/phoenix
+	tar xf /tmp/$PHOENIX_NAME-$PHOENIX_VERSION-bin.tar.gz --strip-components=1 -C /opt/phoenix
 fi
 
 echo "> Linking Phoenix server JAR file to HBase lib directory"
-# Phoenix <= 4.7
-#ln -svfT /opt/phoenix/phoenix-$PHOENIX_VERSION-server.jar /opt/hbase/lib/phoenix-$PHOENIX_VERSION-server.jar
-# Phoenix >= 4.8
-ln -svfT /opt/phoenix/apache-phoenix-$PHOENIX_VERSION-server.jar /opt/hbase/lib/phoenix-$PHOENIX_VERSION-server.jar
+ln -svfT /opt/phoenix/phoenix-$PHOENIX_VERSION-server.jar /opt/hbase/lib/phoenix-$PHOENIX_VERSION-server.jar
 
 echo "> Setting JAVA_HOME for HBase"
-perl -pi -e 's{^\#?\s*export\s*JAVA_HOME\s*=.*$}{export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64}' /opt/hbase/conf/hbase-env.sh
+perl -pi -e 's{^\#?\s*export\s*JAVA_HOME\s*=.*$}{export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64}' /opt/hbase/conf/hbase-env.sh
 
 if ! pgrep -f proc_master >/dev/null
 then
 	echo "> Starting HBase"
-	sudo -u vagrant /opt/hbase/bin/start-hbase.sh
+	sudo -u ubuntu /opt/hbase/bin/start-hbase.sh
 fi
 
 if ! pgrep -f proc_phoenixserver >/dev/null
 then
 	echo "> Starting Phoenix query server"
-	#sudo -u vagrant /opt/phoenix/bin/queryserver.py start -Dphoenix.queryserver.serialization=JSON
-	sudo -u vagrant /opt/phoenix/bin/queryserver.py start
+	sudo -u ubuntu /opt/phoenix/bin/queryserver.py start
 fi
