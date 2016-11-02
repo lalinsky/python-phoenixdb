@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 class Connection(object):
     """Database connection.
-    
+
     You should not construct this object manually, use :func:`~phoenixdb.connect` instead.
     """
 
@@ -83,6 +83,7 @@ class Connection(object):
         transactions. Only defined for DB API 2.0 compatibility.
         You need to use :attr:`autocommit` mode.
         """
+        # TODO can support be added for this?
         if self._closed:
             raise ProgrammingError('the connection is already closed')
 
@@ -100,12 +101,12 @@ class Connection(object):
 
     def set_session(self, autocommit=None, readonly=None):
         """Sets one or more parameters in the current connection.
-        
+
         :param autocommit:
             Switch the connection to autocommit mode. With the current
             version, you need to always enable this, because
             :meth:`commit` is not implemented.
-        
+
         :param readonly:
             Switch the connection to read-only mode.
         """
@@ -115,8 +116,9 @@ class Connection(object):
         if readonly is not None:
             props['readOnly'] = bool(readonly)
         props = self._client.connectionSync(self._id, props)
-        self._autocommit = props['autoCommit']
-        self._readonly = props['readOnly']
+        self._autocommit = props.auto_commit
+        self._readonly = props.read_only
+        self._transactionisolation = props.transaction_isolation
 
     @property
     def autocommit(self):
@@ -128,7 +130,7 @@ class Connection(object):
         if self._closed:
             raise ProgrammingError('the connection is already closed')
         props = self._client.connectionSync(self._id, {'autoCommit': bool(value)})
-        self._autocommit = props['autoCommit']
+        self._autocommit = props.auto_commit
 
     @property
     def readonly(self):
@@ -140,8 +142,18 @@ class Connection(object):
         if self._closed:
             raise ProgrammingError('the connection is already closed')
         props = self._client.connectionSync(self._id, {'readOnly': bool(value)})
-        self._readonly = props['readOnly']
+        self._readonly = props.read_only
 
+    @property
+    def transactionisolation(self):
+        return self._transactionisolation
+
+    @readonly.setter
+    def transactionisolation(self, value):
+        if self._closed:
+            raise ProgrammingError('the connection is already closed')
+        props = self._client.connectionSync(self._id, {'transactionIsolation': bool(value)})
+        self._transactionisolation = props.transaction_isolation
 
 for name in errors.__all__:
     setattr(Connection, name, getattr(errors, name))

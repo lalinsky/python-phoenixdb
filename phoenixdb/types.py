@@ -14,11 +14,13 @@
 
 import time
 import datetime
-import base64
+from decimal import Decimal
+from phoenixdb.calcite import common_pb2
 
 __all__ = [
     'Date', 'Time', 'Timestamp', 'DateFromTicks', 'TimeFromTicks', 'TimestampFromTicks',
     'Binary', 'STRING', 'BINARY', 'NUMBER', 'DATETIME', 'ROWID', 'BOOLEAN',
+    'JAVA_CLASSES', 'JAVA_CLASSES_MAP', 'TypeHelper',
 ]
 
 
@@ -54,13 +56,36 @@ def TimestampFromTicks(ticks):
 
 def Binary(value):
     """Constructs an object capable of holding a binary (long) string value."""
-    if isinstance(value, _BinaryString):
-        return value
-    return _BinaryString(base64.b64encode(value))
+    return value
 
 
-class _BinaryString(str):
-    pass
+def time_from_java_sql_time(n):
+    dt = datetime.datetime(1970, 1, 1) + datetime.timedelta(milliseconds=n)
+    return dt.time()
+
+
+def time_to_java_sql_time(t):
+    return ((t.hour * 60 + t.minute) * 60 + t.second) * 1000 + t.microsecond / 1000
+
+
+def date_from_java_sql_date(n):
+    return datetime.date(1970, 1, 1) + datetime.timedelta(days=n)
+
+
+def date_to_java_sql_date(d):
+    if isinstance(d, datetime.datetime):
+        d = d.date()
+    td = d - datetime.date(1970, 1, 1)
+    return td.days
+
+
+def datetime_from_java_sql_timestamp(n):
+    return datetime.datetime(1970, 1, 1) + datetime.timedelta(milliseconds=n)
+
+
+def datetime_to_java_sql_timestamp(d):
+    td = d - datetime.datetime(1970, 1, 1)
+    return td.microseconds / 1000 + (td.seconds + td.days * 24 * 3600) * 1000
 
 
 class ColumnType(object):
@@ -97,3 +122,68 @@ BOOLEAN = ColumnType(['BOOLEAN'])
 """Type object that can be used to describe boolean columns. This is a phoenixdb-specific extension."""
 
 # XXX ARRAY
+
+
+JAVA_CLASSES = {
+    'bool_value': [
+        ('java.lang.Boolean', common_pb2.BOOLEAN, None, None),
+    ],
+    'string_value': [
+        ('java.lang.Character', common_pb2.CHARACTER, None, None),
+        ('java.lang.String', common_pb2.STRING, None, None),
+        ('java.math.BigDecimal', common_pb2.BIG_DECIMAL, str, Decimal),
+    ],
+    'number_value': [
+        ('java.lang.Integer', common_pb2.INTEGER, None, int),
+        ('java.lang.Short', common_pb2.SHORT, None, int),
+        ('java.lang.Long', common_pb2.LONG, None, long),
+        ('java.lang.Byte', common_pb2.BYTE, None, int),
+        ('java.sql.Time', common_pb2.JAVA_SQL_TIME, time_to_java_sql_time, time_from_java_sql_time),
+        ('java.sql.Date', common_pb2.JAVA_SQL_DATE, date_to_java_sql_date, date_from_java_sql_date),
+        ('java.sql.Timestamp', common_pb2.JAVA_SQL_TIMESTAMP, datetime_to_java_sql_timestamp, datetime_from_java_sql_timestamp),
+    ],
+    'bytes_value': [
+        ('[B', common_pb2.BYTE_STRING, Binary, None),
+    ],
+    'double_value': [
+        # if common_pb2.FLOAT is used, incorrect values are sent
+        ('java.lang.Float', common_pb2.DOUBLE, float, float),
+        ('java.lang.Double', common_pb2.DOUBLE, float, float),
+    ]
+}
+"""Groups of Java classes."""
+
+JAVA_CLASSES_MAP = dict( (v[0], (k, v[1], v[2], v[3])) for k in JAVA_CLASSES for v in JAVA_CLASSES[k] )
+"""Flips the available types to allow for faster lookup by Java class.
+
+This mapping should be structured as:
+    {
+        'java.math.BigDecimal': ('string_value', common_pb2.BIG_DECIMAL, str, Decimal),),
+        ...
+        '<java class>': (<field_name>, <Rep enum>, <mutate_to function>, <cast_from function>),
+    }
+"""
+
+
+class TypeHelper(object):
+    @staticmethod
+    def from_class(klass):
+        """Retrieves a Rep and functions to cast to/from based on the Java class.
+
+        :param klass:
+            The string of the Java class for the column or parameter.
+
+        :returns: tuple ``(field_name, rep, mutate_to, cast_from)``
+            WHERE
+            ``field_name`` is the attribute in ``common_pb2.TypedValue``
+            ``rep`` is the common_pb2.Rep enum
+            ``mutate_to`` is the function to cast values into Phoenix values, if any
+            ``cast_from`` is the function to cast from the Phoenix value to the Python value, if any
+
+        :raises:
+            NotImplementedError
+        """
+        if klass not in JAVA_CLASSES_MAP:
+            raise NotImplementedError('type {} is not supported'.format(klass))
+
+        return JAVA_CLASSES_MAP[klass]

@@ -32,4 +32,7 @@ setup(
             'release': ('setup.py', version),
         },
     },
+    install_requires=[
+        'protobuf>=3.0.0',
+    ]
 )

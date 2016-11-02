@@ -2,14 +2,17 @@
 
 set -e
 
-HBASE_VERSION=1.1.5
-
+# if using Phoenix <= 4.7, file names are "phoenix-<version>-HBase-<version>"
+#HBASE_VERSION=1.1.5
 #PHOENIX_VERSION=4.7.0-HBase-1.1
-
-PHOENIX_VERSION=4.6.0-HBase-1.1
 
 #PHOENIX_VERSION=4.4.0-HBase-1.1
 #APACHE_MIRROR=http://archive.apache.org/dist/
+
+# if using Phoenix >= 4.8, file names have changed to "apache-phoenix-<version>-HBase-<version>"
+HBASE_VERSION=1.2.3
+PHOENIX_VERSION=4.8.0-HBase-1.2
+
 
 export DEBIAN_FRONTEND=noninteractive
 
@@ -41,16 +44,25 @@ fi
 if [ ! -d /opt/phoenix ]
 then
 	echo "> Downloading Phoenix $PHOENIX_VERSION"
-	wget --no-verbose -P /tmp -c -N $APACHE_MIRROR/phoenix/phoenix-$PHOENIX_VERSION/bin/phoenix-$PHOENIX_VERSION-bin.tar.gz
+    # Phoenix <= 4.7
+    #wget --no-verbose -P /tmp -c -N $APACHE_MIRROR/phoenix/phoenix-$PHOENIX_VERSION/bin/phoenix-$PHOENIX_VERSION-bin.tar.gz
+    # Phoenix >= 4.8
+	wget --no-verbose -P /tmp -c -N $APACHE_MIRROR/phoenix/apache-phoenix-$PHOENIX_VERSION/bin/apache-phoenix-$PHOENIX_VERSION-bin.tar.gz
 
 	echo "> Extracting Phoenix"
 	sudo mkdir /opt/phoenix
 	sudo chown vagrant:vagrant -R /opt/phoenix
-	tar xf /tmp/phoenix-$PHOENIX_VERSION-bin.tar.gz --strip-components=1 -C /opt/phoenix
+    # Phoenix <= 4.7
+    #tar xf /tmp/phoenix-$PHOENIX_VERSION-bin.tar.gz --strip-components=1 -C /opt/phoenix
+    # Phoenix >= 4.8
+	tar xf /tmp/apache-phoenix-$PHOENIX_VERSION-bin.tar.gz --strip-components=1 -C /opt/phoenix
 fi
 
 echo "> Linking Phoenix server JAR file to HBase lib directory"
-ln -svfT /opt/phoenix/phoenix-$PHOENIX_VERSION-server.jar /opt/hbase/lib/phoenix-$PHOENIX_VERSION-server.jar
+# Phoenix <= 4.7
+#ln -svfT /opt/phoenix/phoenix-$PHOENIX_VERSION-server.jar /opt/hbase/lib/phoenix-$PHOENIX_VERSION-server.jar
+# Phoenix >= 4.8
+ln -svfT /opt/phoenix/apache-phoenix-$PHOENIX_VERSION-server.jar /opt/hbase/lib/phoenix-$PHOENIX_VERSION-server.jar
 
 echo "> Setting JAVA_HOME for HBase"
 perl -pi -e 's{^\#?\s*export\s*JAVA_HOME\s*=.*$}{export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64}' /opt/hbase/conf/hbase-env.sh
