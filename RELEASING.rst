@@ -10,7 +10,3 @@ Commit the changes and tag the repository::
 Upload the package to PyPI::
 
     python setup.py clean sdist upload
-
-Build and upload the documentation::
-
-    python setup.py build_sphinx upload_sphinx

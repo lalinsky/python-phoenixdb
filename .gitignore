@@ -1,5 +1,7 @@
+/dist/
 /build/
 /doc/_build/
+/doc/build/
 *.pyc
 *.egg-info/
 .vagrant/
