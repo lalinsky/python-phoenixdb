@@ -1,3 +1,4 @@
+import sys
 import unittest
 import datetime
 import phoenixdb
@@ -266,23 +267,24 @@ class TypesTest(DatabaseTestCase):
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val binary(2)")
         with self.conn.cursor() as cursor:
             cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, 'ab')")
-            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (2, ?)", [phoenixdb.Binary('ab')])
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (2, ?)", [phoenixdb.Binary(b'ab')])
             cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (3, '\x01\x00')")
-            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (4, ?)", [phoenixdb.Binary('\x01\x00')])
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (4, ?)", [phoenixdb.Binary(b'\x01\x00')])
             cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
             self.assertEqual(cursor.fetchall(), [
-                [1, 'ab'],
-                [2, 'ab'],
-                [3, '\x01\x00'],
-                [4, '\x01\x00'],
+                [1, b'ab'],
+                [2, b'ab'],
+                [3, b'\x01\x00'],
+                [4, b'\x01\x00'],
             ])
 
     def test_binary_all_bytes(self):
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val binary(256)")
         with self.conn.cursor() as cursor:
-            value = ''
-            for i in range(256):
-                value += chr(i)
+            if sys.version_info[0] < 3:
+                value = ''.join(map(chr, range(256)))
+            else:
+                value = bytes(range(256))
             cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, ?)", [phoenixdb.Binary(value)])
             cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
             self.assertEqual(cursor.fetchall(), [[1, value]])

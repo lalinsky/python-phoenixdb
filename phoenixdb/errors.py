@@ -18,18 +18,23 @@ __all__ = [
     'ProgrammingError', 'NotSupportedError',
 ]
 
+try:
+    _StandardError = StandardError
+except NameError:
+    _StandardError = Exception
 
-class Warning(StandardError):
+
+class Warning(_StandardError):
     """Not used by this package, only defined for compatibility
     with DB API 2.0."""
 
 
-class Error(StandardError):
+class Error(_StandardError):
     """Exception that is the base class of all other error exceptions.
     You can use this to catch all errors with one single except statement."""
 
     def __init__(self, message, code=None, sqlstate=None, cause=None):
-        super(StandardError, self).__init__(message, code, sqlstate, cause)
+        super(_StandardError, self).__init__(message, code, sqlstate, cause)
 
     @property
     def message(self):

@@ -74,11 +74,13 @@ class Cursor(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         row = self.fetchone()
         if row is None:
             raise StopIteration
         return row
+
+    next = __next__
 
     def close(self):
         """Closes the cursor.
@@ -126,9 +128,6 @@ class Cursor(object):
         self._id = id
 
     def _set_signature(self, signature):
-        if signature is not None and signature.SerializeToString() == '':
-            signature = None
-
         self._signature = signature
         self._column_data_types = []
         self._parameter_data_types = []
@@ -144,9 +143,6 @@ class Cursor(object):
             self._parameter_data_types.append(dtype)
 
     def _set_frame(self, frame):
-        if frame is not None and frame.SerializeToString() == '':
-            frame = None
-
         self._frame = frame
         self._pos = None
 
@@ -167,8 +163,8 @@ class Cursor(object):
             result = results[0]
             if result.own_statement:
                 self._set_id(result.statement_id)
-            self._set_signature(result.signature)
-            self._set_frame(result.first_frame)
+            self._set_signature(result.signature if result.HasField('signature') else None)
+            self._set_frame(result.first_frame if result.HasField('first_frame') else None)
             self._updatecount = result.update_count
 
     def _transform_parameters(self, parameters):

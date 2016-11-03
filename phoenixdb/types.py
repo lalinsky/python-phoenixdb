@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
 import time
 import datetime
 from decimal import Decimal
@@ -56,7 +57,7 @@ def TimestampFromTicks(ticks):
 
 def Binary(value):
     """Constructs an object capable of holding a binary (long) string value."""
-    return value
+    return bytes(value)
 
 
 def time_from_java_sql_time(n):
@@ -65,7 +66,7 @@ def time_from_java_sql_time(n):
 
 
 def time_to_java_sql_time(t):
-    return ((t.hour * 60 + t.minute) * 60 + t.second) * 1000 + t.microsecond / 1000
+    return ((t.hour * 60 + t.minute) * 60 + t.second) * 1000 + t.microsecond // 1000
 
 
 def date_from_java_sql_date(n):
@@ -85,7 +86,7 @@ def datetime_from_java_sql_timestamp(n):
 
 def datetime_to_java_sql_timestamp(d):
     td = d - datetime.datetime(1970, 1, 1)
-    return td.microseconds / 1000 + (td.seconds + td.days * 24 * 3600) * 1000
+    return td.microseconds // 1000 + (td.seconds + td.days * 24 * 3600) * 1000
 
 
 class ColumnType(object):
@@ -93,6 +94,9 @@ class ColumnType(object):
     def __init__(self, eq_types):
         self.eq_types = tuple(eq_types)
         self.eq_types_set = set(eq_types)
+
+    def __eq__(self, other):
+        return other in self.eq_types_set
 
     def __cmp__(self, other):
         if other in self.eq_types_set:
@@ -121,8 +125,8 @@ ROWID = ColumnType([])
 BOOLEAN = ColumnType(['BOOLEAN'])
 """Type object that can be used to describe boolean columns. This is a phoenixdb-specific extension."""
 
-# XXX ARRAY
 
+# XXX ARRAY
 
 JAVA_CLASSES = {
     'bool_value': [
@@ -136,7 +140,7 @@ JAVA_CLASSES = {
     'number_value': [
         ('java.lang.Integer', common_pb2.INTEGER, None, int),
         ('java.lang.Short', common_pb2.SHORT, None, int),
-        ('java.lang.Long', common_pb2.LONG, None, long),
+        ('java.lang.Long', common_pb2.LONG, None, long if sys.version_info[0] < 3 else int),
         ('java.lang.Byte', common_pb2.BYTE, None, int),
         ('java.sql.Time', common_pb2.JAVA_SQL_TIME, time_to_java_sql_time, time_from_java_sql_time),
         ('java.sql.Date', common_pb2.JAVA_SQL_DATE, date_to_java_sql_date, date_from_java_sql_date),

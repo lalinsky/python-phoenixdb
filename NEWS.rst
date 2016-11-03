@@ -4,8 +4,9 @@ Changelog
 Version 0.5
 -----------
 
-- The driver now uses the Protocol Buffers protocol instead of JSON to communicate with Avatica.
-- Dropped support for Phoenix 4.6 and older.
+- Added support for Python 3.
+- Switched from the JSON serialization to Protocol Buffers, improved compatibility with Phoenix 4.8.
+- Phoenix 4.6 and older are no longer supported.
 
 Version 0.4
 -----------

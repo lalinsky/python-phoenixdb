@@ -16,15 +16,27 @@
 
 import re
 import socket
-import httplib
 import pprint
 import math
 import logging
-import urlparse
 import time
-from HTMLParser import HTMLParser
 from phoenixdb import errors
 from phoenixdb.calcite import requests_pb2, common_pb2, responses_pb2
+
+try:
+    import httplib
+except ImportError:
+    import http.client as httplib
+
+try:
+    import urlparse
+except ImportError:
+    import urllib.parse as urlparse
+
+try:
+    from HTMLParser import HTMLParser
+except ImportError:
+    from html.parser import HTMLParser
 
 __all__ = ['AvaticaClient']
 
@@ -191,7 +203,7 @@ class AvaticaClient(object):
 
         if response.status != httplib.OK:
             logger.debug("Received response\n%s", response_body)
-            if '<html>' in response_body:
+            if b'<html>' in response_body:
                 parse_error_page(response_body)
             else:
                 # assume the response is in protobuf format
@@ -201,7 +213,7 @@ class AvaticaClient(object):
         message = common_pb2.WireMessage()
         message.ParseFromString(response_body)
 
-        logger.debug("Received response\n%s", message.name)
+        logger.debug("Received response\n%s", message)
 
         if expected_response_type is None:
             expected_response_type = request_name.replace('Request', 'Response')
@@ -380,6 +392,7 @@ class AvaticaClient(object):
         response_data = self._apply(request, 'ExecuteResponse')
         response = responses_pb2.ExecuteResponse()
         response.ParseFromString(response_data)
+        logger.info('results %r', response.results)
         return response.results
 
     def prepare(self, connectionId, sql, maxRowCount=-1):

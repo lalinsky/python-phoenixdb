@@ -1,6 +1,6 @@
-import dbapi20
 import unittest
 import phoenixdb
+from . import dbapi20
 from phoenixdb.tests import TEST_DB_URL
 
 
