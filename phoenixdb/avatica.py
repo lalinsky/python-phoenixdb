@@ -392,7 +392,6 @@ class AvaticaClient(object):
         response_data = self._apply(request, 'ExecuteResponse')
         response = responses_pb2.ExecuteResponse()
         response.ParseFromString(response_data)
-        logger.info('results %r', response.results)
         return response.results
 
     def prepare(self, connectionId, sql, maxRowCount=-1):
