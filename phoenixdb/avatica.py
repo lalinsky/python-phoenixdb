@@ -323,8 +323,8 @@ class AvaticaClient(object):
         request.connection_id = connectionId
         if info is not None:
             # Info is a list of repeated pairs, setting a dict directly fails
-            for k in info:
-                request.info[k] = info[k]
+            for k, v in info.items():
+                request.info[k] = v
 
         response_data = self._apply(request)
         response = responses_pb2.OpenConnectionResponse()

@@ -8,7 +8,6 @@ from phoenixdb.tests import TEST_DB_URL
 class PhoenixDatabaseAPI20Test(dbapi20.DatabaseAPI20Test):
     driver = phoenixdb
     connect_args = (TEST_DB_URL, )
-    connect_kw_args = {}
 
     ddl1 = 'create table %sbooze (name varchar(20) primary key)' % dbapi20.DatabaseAPI20Test.table_prefix
     ddl2 = 'create table %sbarflys (name varchar(20) primary key, drink varchar(30))' % dbapi20.DatabaseAPI20Test.table_prefix
@@ -37,7 +36,6 @@ class PhoenixDatabaseAPI20Test(dbapi20.DatabaseAPI20Test):
             con.close()
 
     def test_autocommit(self):
-        self.connect_kw_args = {}
         con = dbapi20.DatabaseAPI20Test._connect(self)
         self.assertFalse(con.autocommit)
         con.autocommit = True
@@ -47,7 +45,6 @@ class PhoenixDatabaseAPI20Test(dbapi20.DatabaseAPI20Test):
         con.close()
 
     def test_readonly(self):
-        self.connect_kw_args = {}
         con = dbapi20.DatabaseAPI20Test._connect(self)
         self.assertFalse(con.readonly)
         con.readonly = True
@@ -107,20 +104,5 @@ class PhoenixDatabaseAPI20Test(dbapi20.DatabaseAPI20Test):
             # cursor.next should raise StopIteration if no more rows available
             self.assertRaises(StopIteration,cur.next)
             self.failUnless(cur.rowcount in (-1,1))
-        finally:
-            con.close()
-
-    def test_credentials(self):
-        self.connect_kw_args['user'] = 'SCOTT'
-        self.connect_kw_args['password'] = 'TIGER'
-        self.connect_kw_args['readonly'] = 'True'
-        con = self._connect()
-        try:
-            self.assertEqual(con._connection_args, {'user':'SCOTT', 'password':'TIGER'},
-                'Should have extract user and password'
-                )
-            self.assertEqual(con._filtered_args, {'readonly':'True'},
-                'Should have not extracted foo'
-                )
         finally:
             con.close()
