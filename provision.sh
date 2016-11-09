@@ -20,7 +20,7 @@ esac
 
 case $PHOENIX_VERSION in
 *-HBase-1.2)
-    HBASE_VERSION=1.2.3
+    HBASE_VERSION=1.2.4
     ;;
 *-HBase-1.1)
     HBASE_VERSION=1.1.7
