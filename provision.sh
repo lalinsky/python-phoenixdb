@@ -3,7 +3,7 @@
 set -e
 
 #PHOENIX_VERSION=4.7.0-HBase-1.1
-PHOENIX_VERSION=4.8.1-HBase-1.2
+PHOENIX_VERSION=4.8.2-HBase-1.2
 
 case $PHOENIX_VERSION in
 4.7.*)
@@ -20,10 +20,10 @@ esac
 
 case $PHOENIX_VERSION in
 *-HBase-1.2)
-    HBASE_VERSION=1.2.3
+    HBASE_VERSION=1.2.4
     ;;
 *-HBase-1.1)
-    HBASE_VERSION=1.1.7
+    HBASE_VERSION=1.1.8
     ;;
 *)
     echo "! Unsupported HBase version - $PHOENIX_VERSION"
