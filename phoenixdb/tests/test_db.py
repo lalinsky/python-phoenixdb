@@ -33,5 +33,3 @@ class PhoenixDatabaseTest(unittest.TestCase):
             cursor.itersize = 4
             cursor.execute("SELECT * FROM test WHERE id>? ORDER BY id", [1])
             self.assertEqual(cursor.fetchall(), [[i, 'text {}'.format(i)] for i in range(2, 10)])
-
-        self.assertFalse(True)
