@@ -364,7 +364,7 @@ class AvaticaClient(object):
 
         self._apply(request)
 
-    def prepareAndExecute(self, connectionId, statementId, sql, maxRowCount=-1):
+    def prepareAndExecute(self, connectionId, statementId, sql, max_rows_total=None, first_frame_max_size=None):
         """Prepares and immediately executes a statement.
 
         :param connectionId:
@@ -376,25 +376,30 @@ class AvaticaClient(object):
         :param sql:
             SQL query.
 
-        :param maxRowCount:
-            Maximum number of rows to return; negative means no limit.
+        :param max_rows_total:
+            The maximum number of rows that will be allowed for this query.
+
+        :param first_frame_max_size:
+            The maximum number of rows that will be returned in the first Frame returned for this query.
 
         :returns:
             Result set with the signature of the prepared statement and the first frame data.
         """
         request = requests_pb2.PrepareAndExecuteRequest()
         request.connection_id = connectionId
-        request.sql = sql
-        request.max_row_count = maxRowCount
-        request.max_rows_total = -1
         request.statement_id = statementId
+        request.sql = sql
+        if max_rows_total is not None:
+            request.max_rows_total = max_rows_total
+        if first_frame_max_size is not None:
+            request.first_frame_max_size = first_frame_max_size
 
         response_data = self._apply(request, 'ExecuteResponse')
         response = responses_pb2.ExecuteResponse()
         response.ParseFromString(response_data)
         return response.results
 
-    def prepare(self, connectionId, sql, maxRowCount=-1):
+    def prepare(self, connectionId, sql, max_rows_total=None):
         """Prepares a statement.
 
         :param connectionId:
@@ -403,8 +408,8 @@ class AvaticaClient(object):
         :param sql:
             SQL query.
 
-        :param maxRowCount:
-            Maximum number of rows to return; negative means no limit.
+        :param max_rows_total:
+            The maximum number of rows that will be allowed for this query.
 
         :returns:
             Signature of the prepared statement.
@@ -412,15 +417,15 @@ class AvaticaClient(object):
         request = requests_pb2.PrepareRequest()
         request.connection_id = connectionId
         request.sql = sql
-        request.max_row_count = maxRowCount
-        request.max_rows_total = -1
+        if max_rows_total is not None:
+            request.max_rows_total = max_rows_total
 
         response_data = self._apply(request)
         response = responses_pb2.PrepareResponse()
         response.ParseFromString(response_data)
         return response.statement
 
-    def execute(self, connectionId, statementId, signature, parameterValues=None, maxRowCount=-1):
+    def execute(self, connectionId, statementId, signature, parameter_values=None, first_frame_max_size=None):
         """Returns a frame of rows.
 
         The frame describes whether there may be another frame. If there is not
@@ -436,11 +441,11 @@ class AvaticaClient(object):
         :param signature:
             common_pb2.Signature object
 
-        :param parameterValues:
+        :param parameter_values:
             A list of parameter values, if statement is to be executed; otherwise ``None``.
 
-        :param maxRowCount:
-            Maximum number of rows to return; negative means no limit.
+        :param first_frame_max_size:
+            The maximum number of rows that will be returned in the first Frame returned for this query.
 
         :returns:
             Frame data, or ``None`` if there are no more.
@@ -448,18 +453,19 @@ class AvaticaClient(object):
         request = requests_pb2.ExecuteRequest()
         request.statementHandle.id = statementId
         request.statementHandle.connection_id = connectionId
-        if parameterValues is not None:
-            request.parameter_values.extend(parameterValues)
-        request.has_parameter_values = parameterValues is not None
         request.statementHandle.signature.CopyFrom(signature)
-        # TODO ExecuteRequest has no max_row_count
+        if parameter_values is not None:
+            request.parameter_values.extend(parameter_values)
+            request.has_parameter_values = True
+        if first_frame_max_size is not None:
+            request.first_frame_max_size = first_frame_max_size
 
         response_data = self._apply(request)
         response = responses_pb2.ExecuteResponse()
         response.ParseFromString(response_data)
         return response.results
 
-    def fetch(self, connectionId, statementId, parameterValues=None, offset=0, fetchMaxRowCount=-1):
+    def fetch(self, connectionId, statementId, offset=0, frame_max_size=None):
         """Returns a frame of rows.
 
         The frame describes whether there may be another frame. If there is not
@@ -472,13 +478,10 @@ class AvaticaClient(object):
         :param statementId:
             ID of the statement to fetch rows from.
 
-        :param parameterValues:
-            A list of parameter values, if statement is to be executed; otherwise ``None``.
-
         :param offset:
             Zero-based offset of first row in the requested frame.
 
-        :param fetchMaxRowCount:
+        :param frame_max_size:
             Maximum number of rows to return; negative means no limit.
 
         :returns:
@@ -488,7 +491,8 @@ class AvaticaClient(object):
         request.connection_id = connectionId
         request.statement_id = statementId
         request.offset = offset
-        request.fetch_max_row_count = fetchMaxRowCount
+        if frame_max_size is not None:
+            request.frame_max_size = frame_max_size
 
         response_data = self._apply(request)
         response = responses_pb2.FetchResponse()

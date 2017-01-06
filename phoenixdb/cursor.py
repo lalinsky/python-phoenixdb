@@ -155,7 +155,7 @@ class Cursor(object):
     def _fetch_next_frame(self):
         offset = self._frame.offset + len(self._frame.rows)
         frame = self._connection._client.fetch(self._connection._id, self._id,
-            offset=offset, fetchMaxRowCount=self.itersize)
+            offset=offset, frame_max_size=self.itersize)
         self._set_frame(frame)
 
     def _process_results(self, results):
@@ -198,17 +198,17 @@ class Cursor(object):
             if self._id is None:
                 self._set_id(self._connection._client.createStatement(self._connection._id))
             results = self._connection._client.prepareAndExecute(self._connection._id, self._id,
-                operation, maxRowCount=self.itersize)
+                operation, first_frame_max_size=self.itersize)
             self._process_results(results)
         else:
             statement = self._connection._client.prepare(self._connection._id,
-                operation, maxRowCount=self.itersize)
+                operation)
             self._set_id(statement.id)
             self._set_signature(statement.signature)
 
             results = self._connection._client.execute(self._connection._id, self._id,
                 statement.signature, self._transform_parameters(parameters),
-                maxRowCount=self.itersize)
+                first_frame_max_size=self.itersize)
             self._process_results(results)
 
     def executemany(self, operation, seq_of_parameters):
@@ -217,13 +217,13 @@ class Cursor(object):
         self._updatecount = -1
         self._set_frame(None)
         statement = self._connection._client.prepare(self._connection._id,
-            operation, maxRowCount=0)
+            operation, max_rows_total=0)
         self._set_id(statement.id)
         self._set_signature(statement.signature)
         for parameters in seq_of_parameters:
             self._connection._client.execute(self._connection._id, self._id,
             statement.signature, self._transform_parameters(parameters),
-                maxRowCount=0)
+                first_frame_max_size=0)
 
     def _transform_row(self, row):
         """Transforms a Row into Python values.
