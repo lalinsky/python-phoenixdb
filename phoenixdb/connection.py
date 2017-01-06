@@ -16,6 +16,7 @@ import logging
 import uuid
 import weakref
 from phoenixdb import errors
+from phoenixdb.avatica import OPEN_CONNECTION_PROPERTIES
 from phoenixdb.cursor import Cursor
 from phoenixdb.errors import OperationalError, NotSupportedError, ProgrammingError
 
@@ -34,8 +35,17 @@ class Connection(object):
         self._client = client
         self._closed = False
         self._cursors = []
+        # Extract properties to pass to OpenConnectionRequest
+        self._connection_args = {}
+        # The rest of the kwargs
+        self._filtered_args = {}
+        for k in kwargs:
+            if k in OPEN_CONNECTION_PROPERTIES:
+                self._connection_args[k] = kwargs[k]
+            else:
+                self._filtered_args[k] = kwargs[k]
         self.open()
-        self.set_session(**kwargs)
+        self.set_session(**self._filtered_args)
 
     def __del__(self):
         if not self._closed:
@@ -51,7 +61,7 @@ class Connection(object):
     def open(self):
         """Opens the connection."""
         self._id = str(uuid.uuid4())
-        self._client.openConnection(self._id)
+        self._client.openConnection(self._id, info=self._connection_args)
 
     def close(self):
         """Closes the connection.

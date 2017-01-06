@@ -88,6 +88,12 @@ SQLSTATE_ERROR_CLASSES = [
     ('INT', errors.InternalError), # Phoenix internal error
 ]
 
+# Relevant properties as defined by https://calcite.apache.org/avatica/docs/client_reference.html
+OPEN_CONNECTION_PROPERTIES = (
+    'user', # User for the database connection
+    'password', # Password for the user
+)
+
 
 def raise_sql_error(code, sqlstate, message):
     for prefix, error_class in SQLSTATE_ERROR_CLASSES:
@@ -316,7 +322,9 @@ class AvaticaClient(object):
         request = requests_pb2.OpenConnectionRequest()
         request.connection_id = connectionId
         if info is not None:
-            request.info = info
+            # Info is a list of repeated pairs, setting a dict directly fails
+            for k, v in info.items():
+                request.info[k] = v
 
         response_data = self._apply(request)
         response = responses_pb2.OpenConnectionResponse()
