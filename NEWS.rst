@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 0.6
+-----------
+
+- Fixed result fetching when using a query with parameters.
+- Support for Phoenix 4.9.
+
 Version 0.5
 -----------
 

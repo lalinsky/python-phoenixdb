@@ -3,13 +3,17 @@
 set -e
 
 #PHOENIX_VERSION=4.7.0-HBase-1.1
-PHOENIX_VERSION=4.8.2-HBase-1.2
+#PHOENIX_VERSION=4.8.2-HBase-1.2
+PHOENIX_VERSION=4.9.0-HBase-1.2
 
 case $PHOENIX_VERSION in
 4.7.*)
     PHOENIX_NAME=phoenix
     ;;
 4.8.*)
+    PHOENIX_NAME=apache-phoenix
+    ;;
+4.9.*)
     PHOENIX_NAME=apache-phoenix
     ;;
 *)
