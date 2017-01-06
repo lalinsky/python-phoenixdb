@@ -230,23 +230,23 @@ class AvaticaClient(object):
 
         return message.wrapped_message
 
-    def getCatalogs(self, connectionId):
+    def get_catalogs(self, connection_id):
         request = requests_pb2.CatalogsRequest()
-        request.connection_id = connectionId
+        request.connection_id = connection_id
         return self._apply(request)
 
-    def getSchemas(self, connectionId, catalog=None, schemaPattern=None):
+    def get_schemas(self, connection_id, catalog=None, schemaPattern=None):
         request = requests_pb2.SchemasRequest()
-        request.connection_id = connectionId
+        request.connection_id = connection_id
         if catalog is not None:
             request.catalog = catalog
         if schemaPattern is not None:
             request.schema_pattern = schemaPattern
         return self._apply(request)
 
-    def getTables(self, connectionId, catalog=None, schemaPattern=None, tableNamePattern=None, typeList=None):
+    def get_tables(self, connection_id, catalog=None, schemaPattern=None, tableNamePattern=None, typeList=None):
         request = requests_pb2.TablesRequest()
-        request.connection_id = connectionId
+        request.connection_id = connection_id
         if catalog is not None:
             request.catalog = catalog
         if schemaPattern is not None:
@@ -260,9 +260,9 @@ class AvaticaClient(object):
         request.has_type_list = typeList is not None
         return self._apply(request)
 
-    def getColumns(self, connectionId, catalog=None, schemaPattern=None, tableNamePattern=None, columnNamePattern=None):
+    def get_columns(self, connection_id, catalog=None, schemaPattern=None, tableNamePattern=None, columnNamePattern=None):
         request = requests_pb2.ColumnsRequest()
-        request.connection_id = connectionId
+        request.connection_id = connection_id
         if catalog is not None:
             request.catalog = catalog
         if schemaPattern is not None:
@@ -273,20 +273,20 @@ class AvaticaClient(object):
             request.column_name_pattern = columnNamePattern
         return self._apply(request)
 
-    def getTableTypes(self, connectionId):
+    def get_table_types(self, connection_id):
         request = requests_pb2.TableTypesRequest()
-        request.connection_id = connectionId
+        request.connection_id = connection_id
         return self._apply(request)
 
-    def getTypeInfo(self, connectionId):
+    def get_type_info(self, connection_id):
         request = requests_pb2.TypeInfoRequest()
-        request.connection_id = connectionId
+        request.connection_id = connection_id
         return self._apply(request)
 
-    def connectionSync(self, connectionId, connProps=None):
+    def connection_sync(self, connection_id, connProps=None):
         """Synchronizes connection properties with the server.
 
-        :param connectionId:
+        :param connection_id:
             ID of the current connection.
 
         :param connProps:
@@ -299,7 +299,7 @@ class AvaticaClient(object):
             connProps = {}
 
         request = requests_pb2.ConnectionSyncRequest()
-        request.connection_id = connectionId
+        request.connection_id = connection_id
         request.conn_props.auto_commit = connProps.get('autoCommit', False)
         request.conn_props.has_auto_commit = True
         request.conn_props.read_only = connProps.get('readOnly', False)
@@ -313,14 +313,14 @@ class AvaticaClient(object):
         response.ParseFromString(response_data)
         return response.conn_props
 
-    def openConnection(self, connectionId, info=None):
+    def open_connection(self, connection_id, info=None):
         """Opens a new connection.
 
-        :param connectionId:
+        :param connection_id:
             ID of the connection to open.
         """
         request = requests_pb2.OpenConnectionRequest()
-        request.connection_id = connectionId
+        request.connection_id = connection_id
         if info is not None:
             # Info is a list of repeated pairs, setting a dict directly fails
             for k, v in info.items():
@@ -330,55 +330,55 @@ class AvaticaClient(object):
         response = responses_pb2.OpenConnectionResponse()
         response.ParseFromString(response_data)
 
-    def closeConnection(self, connectionId):
+    def close_connection(self, connection_id):
         """Closes a connection.
 
-        :param connectionId:
+        :param connection_id:
             ID of the connection to close.
         """
         request = requests_pb2.CloseConnectionRequest()
-        request.connection_id = connectionId
+        request.connection_id = connection_id
         self._apply(request)
 
-    def createStatement(self, connectionId):
+    def create_statement(self, connection_id):
         """Creates a new statement.
 
-        :param connectionId:
+        :param connection_id:
             ID of the current connection.
 
         :returns:
             New statement ID.
         """
         request = requests_pb2.CreateStatementRequest()
-        request.connection_id = connectionId
+        request.connection_id = connection_id
 
         response_data = self._apply(request)
         response = responses_pb2.CreateStatementResponse()
         response.ParseFromString(response_data)
         return response.statement_id
 
-    def closeStatement(self, connectionId, statementId):
+    def close_statement(self, connection_id, statement_id):
         """Closes a statement.
 
-        :param connectionId:
+        :param connection_id:
             ID of the current connection.
 
-        :param statementId:
+        :param statement_id:
             ID of the statement to close.
         """
         request = requests_pb2.CloseStatementRequest()
-        request.connection_id = connectionId
-        request.statement_id = statementId
+        request.connection_id = connection_id
+        request.statement_id = statement_id
 
         self._apply(request)
 
-    def prepareAndExecute(self, connectionId, statementId, sql, max_rows_total=None, first_frame_max_size=None):
+    def prepare_and_execute(self, connection_id, statement_id, sql, max_rows_total=None, first_frame_max_size=None):
         """Prepares and immediately executes a statement.
 
-        :param connectionId:
+        :param connection_id:
             ID of the current connection.
 
-        :param statementId:
+        :param statement_id:
             ID of the statement to prepare.
 
         :param sql:
@@ -394,8 +394,8 @@ class AvaticaClient(object):
             Result set with the signature of the prepared statement and the first frame data.
         """
         request = requests_pb2.PrepareAndExecuteRequest()
-        request.connection_id = connectionId
-        request.statement_id = statementId
+        request.connection_id = connection_id
+        request.statement_id = statement_id
         request.sql = sql
         if max_rows_total is not None:
             request.max_rows_total = max_rows_total
@@ -407,10 +407,10 @@ class AvaticaClient(object):
         response.ParseFromString(response_data)
         return response.results
 
-    def prepare(self, connectionId, sql, max_rows_total=None):
+    def prepare(self, connection_id, sql, max_rows_total=None):
         """Prepares a statement.
 
-        :param connectionId:
+        :param connection_id:
             ID of the current connection.
 
         :param sql:
@@ -423,7 +423,7 @@ class AvaticaClient(object):
             Signature of the prepared statement.
         """
         request = requests_pb2.PrepareRequest()
-        request.connection_id = connectionId
+        request.connection_id = connection_id
         request.sql = sql
         if max_rows_total is not None:
             request.max_rows_total = max_rows_total
@@ -433,17 +433,17 @@ class AvaticaClient(object):
         response.ParseFromString(response_data)
         return response.statement
 
-    def execute(self, connectionId, statementId, signature, parameter_values=None, first_frame_max_size=None):
+    def execute(self, connection_id, statement_id, signature, parameter_values=None, first_frame_max_size=None):
         """Returns a frame of rows.
 
         The frame describes whether there may be another frame. If there is not
         another frame, the current iteration is done when we have finished the
         rows in the this frame.
 
-        :param connectionId:
+        :param connection_id:
             ID of the current connection.
 
-        :param statementId:
+        :param statement_id:
             ID of the statement to fetch rows from.
 
         :param signature:
@@ -459,8 +459,8 @@ class AvaticaClient(object):
             Frame data, or ``None`` if there are no more.
         """
         request = requests_pb2.ExecuteRequest()
-        request.statementHandle.id = statementId
-        request.statementHandle.connection_id = connectionId
+        request.statementHandle.id = statement_id
+        request.statementHandle.connection_id = connection_id
         request.statementHandle.signature.CopyFrom(signature)
         if parameter_values is not None:
             request.parameter_values.extend(parameter_values)
@@ -473,17 +473,17 @@ class AvaticaClient(object):
         response.ParseFromString(response_data)
         return response.results
 
-    def fetch(self, connectionId, statementId, offset=0, frame_max_size=None):
+    def fetch(self, connection_id, statement_id, offset=0, frame_max_size=None):
         """Returns a frame of rows.
 
         The frame describes whether there may be another frame. If there is not
         another frame, the current iteration is done when we have finished the
         rows in the this frame.
 
-        :param connectionId:
+        :param connection_id:
             ID of the current connection.
 
-        :param statementId:
+        :param statement_id:
             ID of the statement to fetch rows from.
 
         :param offset:
@@ -496,8 +496,8 @@ class AvaticaClient(object):
             Frame data, or ``None`` if there are no more.
         """
         request = requests_pb2.FetchRequest()
-        request.connection_id = connectionId
-        request.statement_id = statementId
+        request.connection_id = connection_id
+        request.statement_id = statement_id
         request.offset = offset
         if frame_max_size is not None:
             request.frame_max_size = frame_max_size

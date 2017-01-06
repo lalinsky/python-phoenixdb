@@ -92,7 +92,7 @@ class Cursor(object):
         if self._closed:
             raise ProgrammingError('the cursor is already closed')
         if self._id is not None:
-            self._connection._client.closeStatement(self._connection._id, self._id)
+            self._connection._client.close_statement(self._connection._id, self._id)
             self._id = None
         self._signature = None
         self._column_data_types = []
@@ -124,7 +124,7 @@ class Cursor(object):
 
     def _set_id(self, id):
         if self._id is not None and self._id != id:
-            self._connection._client.closeStatement(self._connection._id, self._id)
+            self._connection._client.close_statement(self._connection._id, self._id)
         self._id = id
 
     def _set_signature(self, signature):
@@ -196,8 +196,8 @@ class Cursor(object):
         self._set_frame(None)
         if parameters is None:
             if self._id is None:
-                self._set_id(self._connection._client.createStatement(self._connection._id))
-            results = self._connection._client.prepareAndExecute(self._connection._id, self._id,
+                self._set_id(self._connection._client.create_statement(self._connection._id))
+            results = self._connection._client.prepare_and_execute(self._connection._id, self._id,
                 operation, first_frame_max_size=self.itersize)
             self._process_results(results)
         else:

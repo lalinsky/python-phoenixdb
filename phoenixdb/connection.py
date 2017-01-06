@@ -61,7 +61,7 @@ class Connection(object):
     def open(self):
         """Opens the connection."""
         self._id = str(uuid.uuid4())
-        self._client.openConnection(self._id, info=self._connection_args)
+        self._client.open_connection(self._id, info=self._connection_args)
 
     def close(self):
         """Closes the connection.
@@ -77,7 +77,7 @@ class Connection(object):
             cursor = cursor_ref()
             if cursor is not None and not cursor._closed:
                 cursor.close()
-        self._client.closeConnection(self._id)
+        self._client.close_connection(self._id)
         self._client.close()
         self._closed = True
 
@@ -125,7 +125,7 @@ class Connection(object):
             props['autoCommit'] = bool(autocommit)
         if readonly is not None:
             props['readOnly'] = bool(readonly)
-        props = self._client.connectionSync(self._id, props)
+        props = self._client.connection_sync(self._id, props)
         self._autocommit = props.auto_commit
         self._readonly = props.read_only
         self._transactionisolation = props.transaction_isolation
@@ -139,7 +139,7 @@ class Connection(object):
     def autocommit(self, value):
         if self._closed:
             raise ProgrammingError('the connection is already closed')
-        props = self._client.connectionSync(self._id, {'autoCommit': bool(value)})
+        props = self._client.connection_sync(self._id, {'autoCommit': bool(value)})
         self._autocommit = props.auto_commit
 
     @property
@@ -151,7 +151,7 @@ class Connection(object):
     def readonly(self, value):
         if self._closed:
             raise ProgrammingError('the connection is already closed')
-        props = self._client.connectionSync(self._id, {'readOnly': bool(value)})
+        props = self._client.connection_sync(self._id, {'readOnly': bool(value)})
         self._readonly = props.read_only
 
     @property
@@ -162,7 +162,7 @@ class Connection(object):
     def transactionisolation(self, value):
         if self._closed:
             raise ProgrammingError('the connection is already closed')
-        props = self._client.connectionSync(self._id, {'transactionIsolation': bool(value)})
+        props = self._client.connection_sync(self._id, {'transactionIsolation': bool(value)})
         self._transactionisolation = props.transaction_isolation
 
 for name in errors.__all__:
