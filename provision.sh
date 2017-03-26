@@ -28,10 +28,10 @@ esac
 
 case $PHOENIX_VERSION in
 *-HBase-1.2)
-    HBASE_VERSION=1.2.4
+    HBASE_VERSION=1.2.5
     ;;
 *-HBase-1.1)
-    HBASE_VERSION=1.1.8
+    HBASE_VERSION=1.1.9
     ;;
 *)
     echo "! Unsupported HBase version - $PHOENIX_VERSION"
