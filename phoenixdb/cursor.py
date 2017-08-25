@@ -257,7 +257,7 @@ class Cursor(object):
                 tmp_row.append(value)
         return tmp_row
 
-    def fetchone(self):
+    def fetchone(self, doc=False):
         if self._frame is None:
             raise ProgrammingError('no select statement was executed')
         if self._pos is None:
@@ -269,28 +269,37 @@ class Cursor(object):
             self._pos = None
             if not self._frame.done:
                 self._fetch_next_frame()
-        return row
+        if doc:
+            return self.docResult(row=row)
+        else:
+            return row
 
-    def fetchmany(self, size=None):
+    def fetchmany(self, size=None, doc=False):
         if size is None:
             size = self.arraysize
         rows = []
         while size > 0:
-            row = self.fetchone()
+            row = self.fetchone(doc=doc)
             if row is None:
                 break
             rows.append(row)
             size -= 1
         return rows
 
-    def fetchall(self):
+    def fetchall(self, doc=False):
         rows = []
         while True:
-            row = self.fetchone()
+            row = self.fetchone(doc=doc)
             if row is None:
                 break
             rows.append(row)
         return rows
+    
+    def docResult(self, row):
+        d = {}
+        for ind, val in enumerate(row):
+            d[self._signature.columns.__getitem__(ind).column_name] = val
+        return d
 
     def setinputsizes(self, sizes):
         pass
