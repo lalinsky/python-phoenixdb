@@ -27,4 +27,6 @@ test:
   services:
     - $CI_REGISTRY_IMAGE/phoenix:4.11
   script:
-    - tox
+    - tox -e py27,py35
+  tags:
+    - docker
