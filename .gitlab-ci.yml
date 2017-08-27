@@ -25,7 +25,10 @@ build phoenix image:
 test:
   image: $CI_REGISTRY_IMAGE/build-env
   services:
-    - $CI_REGISTRY_IMAGE/phoenix:4.11
+    - name: $CI_REGISTRY_IMAGE/phoenix:4.11
+      alias: phoenix
+  variables:
+    PHOENIXDB_TEST_DB_URL: http://phoenix:8765/
   script:
     - tox -e py27,py35
   tags:
