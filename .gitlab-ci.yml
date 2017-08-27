@@ -12,24 +12,73 @@ build build-env image:
   tags:
     - docker-host
 
-build phoenix image:
+.build-phoenix-image: &build_phoenix_image
   stage: prepare
   script:
     - cd ci/phoenix
-    - docker build -t ${CI_REGISTRY_IMAGE}/phoenix:4.11 --build-arg HBASE_VERSION=1.3.1 --build-arg PHOENIX_VERSION=4.11.0-HBase-1.3 .
+    - docker build -t ${CI_REGISTRY_IMAGE}/phoenix:4.11 --build-arg HBASE_VERSION=$HBASE_VERSION --build-arg PHOENIX_VERSION=$PHOENIX_VERSION .
     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
     - docker push $CI_REGISTRY_IMAGE/phoenix:4.11
   tags:
     - docker-host
 
-test:
+build phoenix 4.11 image:
+  <<*: build_phoenix_image
+  variables:
+    PHOENIX_VERSION: 4.11.0-HBase-1.3
+    HBASE_VERSION: 1.3.1
+
+build phoenix 4.10 image:
+  <<*: build_phoenix_image
+  variables:
+    PHOENIX_VERSION: 4.10.0-HBase-1.2
+    HBASE_VERSION: 1.2.6
+
+build phoenix 4.9 image:
+  <<*: build_phoenix_image
+  variables:
+    PHOENIX_VERSION: 4.9.0-HBase-1.2
+    HBASE_VERSION: 1.2.6
+
+build phoenix 4.8 image:
+  <<*: build_phoenix_image
+  variables:
+    PHOENIX_VERSION: 4.8.2-HBase-1.2
+    HBASE_VERSION: 1.2.6
+
+.test: &test
   image: $CI_REGISTRY_IMAGE/build-env
+  variables:
+    PHOENIXDB_TEST_DB_URL: http://phoenix:8765/
+    PIP_CACHE_DIR: $CI_PROJECT_DIR/cache/
+  script:
+    - tox -e py27,py35
+  cache:
+    paths:
+      - cache/
+  tags:
+    - docker
+
+test phoenix 4.11:
+  <<*: test
   services:
     - name: $CI_REGISTRY_IMAGE/phoenix:4.11
       alias: phoenix
-  variables:
-    PHOENIXDB_TEST_DB_URL: http://phoenix:8765/
-  script:
-    - tox -e py27,py35
-  tags:
-    - docker
+
+test phoenix 4.10:
+  <<*: test
+  services:
+    - name: $CI_REGISTRY_IMAGE/phoenix:4.10
+      alias: phoenix
+
+test phoenix 4.9:
+  <<*: test
+  services:
+    - name: $CI_REGISTRY_IMAGE/phoenix:4.9
+      alias: phoenix
+
+test phoenix 4.8:
+  <<*: test
+  services:
+    - name: $CI_REGISTRY_IMAGE/phoenix:4.8
+      alias: phoenix
