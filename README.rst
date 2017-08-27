@@ -60,15 +60,10 @@ necessary requirements::
 To create or update protobuf classes, change the tag in ``gen-protobuf.sh`` and execute.
 
 If you need a Phoenix server for experimenting, you can get one running
-quickly using Vagrant::
+quickly using Docker::
 
-    vagrant up
-
-You can connect to the virtual machine and work with the Phoenix shell
-from there::
-
-    vagrant ssh
-    /opt/phoenix/bin/sqlline.py localhost
+    docker pull docker.oxygene.sk/lukas/python-phoenixdb/phoenix:4.11
+    docker run -p 127.0.0.1:8765:8765 docker.oxygene.sk/lukas/python-phoenixdb/phoenix:4.11
 
 Interactive SQL shell
 ---------------------
