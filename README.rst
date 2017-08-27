@@ -97,7 +97,6 @@ working Phoenix database and set the ``PHOENIXDB_TEST_DB_URL`` environment varia
 Known issues
 ------------
 
-- In general, the library has not been battle-tested yet. You might encounter almost any problem. Use with care.
 - You can only use the library in autocommit mode. The native Java Phoenix library also implements batched upserts, which can be committed at once, but this is not exposed over the remote server.
   (`CALCITE-767 <https://issues.apache.org/jira/browse/CALCITE-767>`_)
 - TIME and DATE columns in Phoenix are stored as full timestamps with a millisecond accuracy,

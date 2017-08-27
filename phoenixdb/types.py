@@ -131,6 +131,11 @@ BOOLEAN = ColumnType(['BOOLEAN'])
 
 # XXX ARRAY
 
+if sys.version_info[0] < 3:
+    _long = long  # noqa: F821
+else:
+    _long = int
+
 JAVA_CLASSES = {
     'bool_value': [
         ('java.lang.Boolean', common_pb2.BOOLEAN, None, None),
@@ -143,7 +148,7 @@ JAVA_CLASSES = {
     'number_value': [
         ('java.lang.Integer', common_pb2.INTEGER, None, int),
         ('java.lang.Short', common_pb2.SHORT, None, int),
-        ('java.lang.Long', common_pb2.LONG, None, long if sys.version_info[0] < 3 else int),
+        ('java.lang.Long', common_pb2.LONG, None, _long),
         ('java.lang.Byte', common_pb2.BYTE, None, int),
         ('java.sql.Time', common_pb2.JAVA_SQL_TIME, time_to_java_sql_time, time_from_java_sql_time),
         ('java.sql.Date', common_pb2.JAVA_SQL_DATE, date_to_java_sql_date, date_from_java_sql_date),
