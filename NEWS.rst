@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 0.7
+-----------
+
+- Added DictCursor for easier access to columns by their names.
+- Support for Phoenix versions from 4.8 to 4.11.
+
 Version 0.6
 -----------
 
