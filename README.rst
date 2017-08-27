@@ -16,7 +16,7 @@ The easiest way to install the library is using `pip <https://pip.pypa.io/en/sta
 
     pip install phoenixdb
 
-You can also download the source code from `Bitbucket <https://bitbucket.org/lalinsky/python-phoenixdb/downloads>`_,
+You can also download the source code from `GitHub <https://github.com/lalinsky/python-phoenixdb/releases>`_,
 extract the archive and then install it manually::
 
     cd /path/to/python-phoenix-x.y.z/
@@ -57,10 +57,11 @@ necessary requirements::
     pip install -r requirements.txt
     python setup.py develop
 
-To create or update protobuf classes, change the tag in ``gen-protobuf.sh`` and execute.
+To create or update the Avatica protobuf classes, change the tag in ``gen-protobuf.sh``
+and run the script.
 
-If you need a Phoenix server for experimenting, you can get one running
-quickly using Docker::
+If you need a Phoenix query server for experimenting, you can get one running
+quickly using `Docker <https://www.docker.com/>`_::
 
     docker pull docker.oxygene.sk/lukas/python-phoenixdb/phoenix:4.11
     docker run -p 127.0.0.1:8765:8765 docker.oxygene.sk/lukas/python-phoenixdb/phoenix:4.11
@@ -93,6 +94,9 @@ working Phoenix database and set the ``PHOENIXDB_TEST_DB_URL`` environment varia
 
     export PHOENIXDB_TEST_DB_URL='http://localhost:8765/'
     nosetests
+
+Commits to the master branch are automatically tested against all supported versions of Phoenix.
+You can see the results `here <https://code.oxygene.sk/lukas/python-phoenixdb/pipelines>`_.
 
 Known issues
 ------------

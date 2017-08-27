@@ -11,6 +11,8 @@ build build-env image:
     - docker push $CI_REGISTRY_IMAGE/build-env
   tags:
     - docker-host
+  only:
+    - master@lukas/python-phoenixdb
 
 .build-phoenix-image: &build_phoenix_image
   stage: prepare
