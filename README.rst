@@ -29,6 +29,7 @@ The library implements the standard DB API 2.0 interface, so it can be
 used the same way you would use any other SQL database from Python, for example::
 
     import phoenixdb
+    import phoenixdb.cursor
 
     database_url = 'http://localhost:8765/'
     conn = phoenixdb.connect(database_url, autocommit=True)
@@ -38,6 +39,11 @@ used the same way you would use any other SQL database from Python, for example:
     cursor.execute("UPSERT INTO users VALUES (?, ?)", (1, 'admin'))
     cursor.execute("SELECT * FROM users")
     print cursor.fetchall()
+
+    cursor = conn.cursor(cursor_factory=phoenixdb.cursor.DictCursor)
+    cursor.execute("SELECT * FROM users WHERE id=1")
+    print cursor.fetchone()['USERNAME']
+
 
 Setting up a development environment
 ------------------------------------

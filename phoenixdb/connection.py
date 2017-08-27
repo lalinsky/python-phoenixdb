@@ -31,9 +31,18 @@ class Connection(object):
     You should not construct this object manually, use :func:`~phoenixdb.connect` instead.
     """
 
-    def __init__(self, client, **kwargs):
+    cursor_factory = None
+    """
+    The default cursor factory used by :meth:`cursor` if the parameter is not specified.
+    """
+
+    def __init__(self, client, cursor_factory=None, **kwargs):
         self._client = client
         self._closed = False
+        if cursor_factory is not None:
+            self.cursor_factory = cursor_factory
+        else:
+            self.cursor_factory = Cursor
         self._cursors = []
         # Extract properties to pass to OpenConnectionRequest
         self._connection_args = {}
@@ -97,15 +106,22 @@ class Connection(object):
         if self._closed:
             raise ProgrammingError('the connection is already closed')
 
-    def cursor(self):
+    def cursor(self, cursor_factory=None):
         """Creates a new cursor.
+
+        :param cursor_factory:
+            This argument can be used to create non-standard cursors.
+            The class returned must be a subclass of
+            :class:`~phoenixdb.cursor.Cursor` (for example :class:`~phoenixdb.cursor.DictCursor`).
+            A default factory for the connection can also be specified using the
+            :attr:`cursor_factory` attribute.
 
         :returns:
             A :class:`~phoenixdb.cursor.Cursor` object.
         """
         if self._closed:
             raise ProgrammingError('the connection is already closed')
-        cursor = Cursor(self)
+        cursor = (cursor_factory or self.cursor_factory)(self)
         self._cursors.append(weakref.ref(cursor, self._cursors.remove))
         return cursor
 
@@ -164,6 +180,7 @@ class Connection(object):
             raise ProgrammingError('the connection is already closed')
         props = self._client.connection_sync(self._id, {'transactionIsolation': bool(value)})
         self._transactionisolation = props.transaction_isolation
+
 
 for name in errors.__all__:
     setattr(Connection, name, getattr(errors, name))

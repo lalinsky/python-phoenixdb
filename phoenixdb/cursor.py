@@ -18,7 +18,7 @@ from phoenixdb.types import TypeHelper
 from phoenixdb.errors import OperationalError, NotSupportedError, ProgrammingError, InternalError
 from phoenixdb.calcite import common_pb2
 
-__all__ = ['Cursor', 'ColumnDescription']
+__all__ = ['Cursor', 'ColumnDescription', 'DictCursor']
 
 logger = logging.getLogger(__name__)
 
@@ -327,3 +327,14 @@ class Cursor(object):
         if self._frame is not None and self._pos is not None:
             return self._frame.offset + self._pos
         return self._pos
+
+
+class DictCursor(Cursor):
+    """A cursor which returns results as a dictionary"""
+
+    def _transform_row(self, row):
+        row = super(DictCursor, self)._transform_row(row)
+        d = {}
+        for ind, val in enumerate(row):
+            d[self._signature.columns[ind].column_name] = val
+        return d
