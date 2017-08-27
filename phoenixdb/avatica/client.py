@@ -466,6 +466,7 @@ class AvaticaClient(object):
             request.parameter_values.extend(parameter_values)
             request.has_parameter_values = True
         if first_frame_max_size is not None:
+            request.deprecated_first_frame_max_size = first_frame_max_size
             request.first_frame_max_size = first_frame_max_size
 
         response_data = self._apply(request)

@@ -1,1 +1,1 @@
-from .client import AvaticaClient
+from .client import AvaticaClient  # noqa: F401

@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='requests.proto',
   package='',
   syntax='proto3',
-  serialized_pb=_b('\n\x0erequests.proto\x1a\x0c\x63ommon.proto\"(\n\x0f\x43\x61talogsRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\"0\n\x17\x44\x61tabasePropertyRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\"P\n\x0eSchemasRequest\x12\x0f\n\x07\x63\x61talog\x18\x01 \x01(\t\x12\x16\n\x0eschema_pattern\x18\x02 \x01(\t\x12\x15\n\rconnection_id\x18\x03 \x01(\t\"\x95\x01\n\rTablesRequest\x12\x0f\n\x07\x63\x61talog\x18\x01 \x01(\t\x12\x16\n\x0eschema_pattern\x18\x02 \x01(\t\x12\x1a\n\x12table_name_pattern\x18\x03 \x01(\t\x12\x11\n\ttype_list\x18\x04 \x03(\t\x12\x15\n\rhas_type_list\x18\x06 \x01(\x08\x12\x15\n\rconnection_id\x18\x07 \x01(\t\"*\n\x11TableTypesRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\"\x89\x01\n\x0e\x43olumnsRequest\x12\x0f\n\x07\x63\x61talog\x18\x01 \x01(\t\x12\x16\n\x0eschema_pattern\x18\x02 \x01(\t\x12\x1a\n\x12table_name_pattern\x18\x03 \x01(\t\x12\x1b\n\x13\x63olumn_name_pattern\x18\x04 \x01(\t\x12\x15\n\rconnection_id\x18\x05 \x01(\t\"(\n\x0fTypeInfoRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\"\xa1\x01\n\x18PrepareAndExecuteRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\x12\x0b\n\x03sql\x18\x02 \x01(\t\x12\x15\n\rmax_row_count\x18\x03 \x01(\x04\x12\x14\n\x0cstatement_id\x18\x04 \x01(\r\x12\x16\n\x0emax_rows_total\x18\x05 \x01(\x03\x12\x1c\n\x14\x66irst_frame_max_size\x18\x06 \x01(\x05\"c\n\x0ePrepareRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\x12\x0b\n\x03sql\x18\x02 \x01(\t\x12\x15\n\rmax_row_count\x18\x03 \x01(\x04\x12\x16\n\x0emax_rows_total\x18\x04 \x01(\x03\"\x80\x01\n\x0c\x46\x65tchRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\x12\x14\n\x0cstatement_id\x18\x02 \x01(\r\x12\x0e\n\x06offset\x18\x03 \x01(\x04\x12\x1b\n\x13\x66\x65tch_max_row_count\x18\x04 \x01(\r\x12\x16\n\x0e\x66rame_max_size\x18\x05 \x01(\x05\"/\n\x16\x43reateStatementRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\"D\n\x15\x43loseStatementRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\x12\x14\n\x0cstatement_id\x18\x02 \x01(\r\"\x8b\x01\n\x15OpenConnectionRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\x12.\n\x04info\x18\x02 \x03(\x0b\x32 .OpenConnectionRequest.InfoEntry\x1a+\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"/\n\x16\x43loseConnectionRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\"Y\n\x15\x43onnectionSyncRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\x12)\n\nconn_props\x18\x02 \x01(\x0b\x32\x15.ConnectionProperties\"\x9e\x01\n\x0e\x45xecuteRequest\x12)\n\x0fstatementHandle\x18\x01 \x01(\x0b\x32\x10.StatementHandle\x12%\n\x10parameter_values\x18\x02 \x03(\x0b\x32\x0b.TypedValue\x12\x1c\n\x14\x66irst_frame_max_size\x18\x03 \x01(\x04\x12\x1c\n\x14has_parameter_values\x18\x04 \x01(\x08\"m\n\x12SyncResultsRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\x12\x14\n\x0cstatement_id\x18\x02 \x01(\r\x12\x1a\n\x05state\x18\x03 \x01(\x0b\x32\x0b.QueryState\x12\x0e\n\x06offset\x18\x04 \x01(\x04\"&\n\rCommitRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\"(\n\x0fRollbackRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\"b\n\x1dPrepareAndExecuteBatchRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\x12\x14\n\x0cstatement_id\x18\x02 \x01(\r\x12\x14\n\x0csql_commands\x18\x03 \x03(\t\"4\n\x0bUpdateBatch\x12%\n\x10parameter_values\x18\x01 \x03(\x0b\x32\x0b.TypedValue\"a\n\x13\x45xecuteBatchRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\x12\x14\n\x0cstatement_id\x18\x02 \x01(\r\x12\x1d\n\x07updates\x18\x03 \x03(\x0b\x32\x0c.UpdateBatchB\"\n org.apache.calcite.avatica.protob\x06proto3')
+  serialized_pb=_b('\n\x0erequests.proto\x1a\x0c\x63ommon.proto\"(\n\x0f\x43\x61talogsRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\"0\n\x17\x44\x61tabasePropertyRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\"P\n\x0eSchemasRequest\x12\x0f\n\x07\x63\x61talog\x18\x01 \x01(\t\x12\x16\n\x0eschema_pattern\x18\x02 \x01(\t\x12\x15\n\rconnection_id\x18\x03 \x01(\t\"\x95\x01\n\rTablesRequest\x12\x0f\n\x07\x63\x61talog\x18\x01 \x01(\t\x12\x16\n\x0eschema_pattern\x18\x02 \x01(\t\x12\x1a\n\x12table_name_pattern\x18\x03 \x01(\t\x12\x11\n\ttype_list\x18\x04 \x03(\t\x12\x15\n\rhas_type_list\x18\x06 \x01(\x08\x12\x15\n\rconnection_id\x18\x07 \x01(\t\"*\n\x11TableTypesRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\"\x89\x01\n\x0e\x43olumnsRequest\x12\x0f\n\x07\x63\x61talog\x18\x01 \x01(\t\x12\x16\n\x0eschema_pattern\x18\x02 \x01(\t\x12\x1a\n\x12table_name_pattern\x18\x03 \x01(\t\x12\x1b\n\x13\x63olumn_name_pattern\x18\x04 \x01(\t\x12\x15\n\rconnection_id\x18\x05 \x01(\t\"(\n\x0fTypeInfoRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\"\xa1\x01\n\x18PrepareAndExecuteRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\x12\x0b\n\x03sql\x18\x02 \x01(\t\x12\x15\n\rmax_row_count\x18\x03 \x01(\x04\x12\x14\n\x0cstatement_id\x18\x04 \x01(\r\x12\x16\n\x0emax_rows_total\x18\x05 \x01(\x03\x12\x1c\n\x14\x66irst_frame_max_size\x18\x06 \x01(\x05\"c\n\x0ePrepareRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\x12\x0b\n\x03sql\x18\x02 \x01(\t\x12\x15\n\rmax_row_count\x18\x03 \x01(\x04\x12\x16\n\x0emax_rows_total\x18\x04 \x01(\x03\"\x80\x01\n\x0c\x46\x65tchRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\x12\x14\n\x0cstatement_id\x18\x02 \x01(\r\x12\x0e\n\x06offset\x18\x03 \x01(\x04\x12\x1b\n\x13\x66\x65tch_max_row_count\x18\x04 \x01(\r\x12\x16\n\x0e\x66rame_max_size\x18\x05 \x01(\x05\"/\n\x16\x43reateStatementRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\"D\n\x15\x43loseStatementRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\x12\x14\n\x0cstatement_id\x18\x02 \x01(\r\"\x8b\x01\n\x15OpenConnectionRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\x12.\n\x04info\x18\x02 \x03(\x0b\x32 .OpenConnectionRequest.InfoEntry\x1a+\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"/\n\x16\x43loseConnectionRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\"Y\n\x15\x43onnectionSyncRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\x12)\n\nconn_props\x18\x02 \x01(\x0b\x32\x15.ConnectionProperties\"\xc7\x01\n\x0e\x45xecuteRequest\x12)\n\x0fstatementHandle\x18\x01 \x01(\x0b\x32\x10.StatementHandle\x12%\n\x10parameter_values\x18\x02 \x03(\x0b\x32\x0b.TypedValue\x12\'\n\x1f\x64\x65precated_first_frame_max_size\x18\x03 \x01(\x04\x12\x1c\n\x14has_parameter_values\x18\x04 \x01(\x08\x12\x1c\n\x14\x66irst_frame_max_size\x18\x05 \x01(\x05\"m\n\x12SyncResultsRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\x12\x14\n\x0cstatement_id\x18\x02 \x01(\r\x12\x1a\n\x05state\x18\x03 \x01(\x0b\x32\x0b.QueryState\x12\x0e\n\x06offset\x18\x04 \x01(\x04\"&\n\rCommitRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\"(\n\x0fRollbackRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\"b\n\x1dPrepareAndExecuteBatchRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\x12\x14\n\x0cstatement_id\x18\x02 \x01(\r\x12\x14\n\x0csql_commands\x18\x03 \x03(\t\"4\n\x0bUpdateBatch\x12%\n\x10parameter_values\x18\x01 \x03(\x0b\x32\x0b.TypedValue\"a\n\x13\x45xecuteBatchRequest\x12\x15\n\rconnection_id\x18\x01 \x01(\t\x12\x14\n\x0cstatement_id\x18\x02 \x01(\r\x12\x1d\n\x07updates\x18\x03 \x03(\x0b\x32\x0c.UpdateBatchB\"\n org.apache.calcite.avatica.protob\x06proto3')
   ,
   dependencies=[common__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -734,7 +734,7 @@ _EXECUTEREQUEST = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='first_frame_max_size', full_name='ExecuteRequest.first_frame_max_size', index=2,
+      name='deprecated_first_frame_max_size', full_name='ExecuteRequest.deprecated_first_frame_max_size', index=2,
       number=3, type=4, cpp_type=4, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -744,6 +744,13 @@ _EXECUTEREQUEST = _descriptor.Descriptor(
       name='has_parameter_values', full_name='ExecuteRequest.has_parameter_values', index=3,
       number=4, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='first_frame_max_size', full_name='ExecuteRequest.first_frame_max_size', index=4,
+      number=5, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
@@ -760,7 +767,7 @@ _EXECUTEREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=1382,
-  serialized_end=1540,
+  serialized_end=1581,
 )
 
 
@@ -811,8 +818,8 @@ _SYNCRESULTSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1542,
-  serialized_end=1651,
+  serialized_start=1583,
+  serialized_end=1692,
 )
 
 
@@ -842,8 +849,8 @@ _COMMITREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1653,
-  serialized_end=1691,
+  serialized_start=1694,
+  serialized_end=1732,
 )
 
 
@@ -873,8 +880,8 @@ _ROLLBACKREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1693,
-  serialized_end=1733,
+  serialized_start=1734,
+  serialized_end=1774,
 )
 
 
@@ -918,8 +925,8 @@ _PREPAREANDEXECUTEBATCHREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1735,
-  serialized_end=1833,
+  serialized_start=1776,
+  serialized_end=1874,
 )
 
 
@@ -949,8 +956,8 @@ _UPDATEBATCH = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1835,
-  serialized_end=1887,
+  serialized_start=1876,
+  serialized_end=1928,
 )
 
 
@@ -994,8 +1001,8 @@ _EXECUTEBATCHREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1889,
-  serialized_end=1986,
+  serialized_start=1930,
+  serialized_end=2027,
 )
 
 _OPENCONNECTIONREQUEST_INFOENTRY.containing_type = _OPENCONNECTIONREQUEST
