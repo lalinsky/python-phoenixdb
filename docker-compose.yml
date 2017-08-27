@@ -1,0 +1,6 @@
+version: "3"
+services:
+  phoenix:
+    image: docker.oxygene.sk/lukas/python-phoenixdb/phoenix:${PHOENIX_VERSION:-4.11}
+    ports:
+      - "127.0.0.1:8765:8765"

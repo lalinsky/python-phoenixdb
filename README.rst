@@ -63,8 +63,11 @@ and run the script.
 If you need a Phoenix query server for experimenting, you can get one running
 quickly using `Docker <https://www.docker.com/>`_::
 
-    docker pull docker.oxygene.sk/lukas/python-phoenixdb/phoenix:4.11
-    docker run -p 127.0.0.1:8765:8765 docker.oxygene.sk/lukas/python-phoenixdb/phoenix:4.11
+    docker-compose up
+
+Or if you need an older version of Phoenix::
+
+    PHOENIX_VERSION=4.9 docker-compose up
 
 Interactive SQL shell
 ---------------------

@@ -16,7 +16,7 @@ import sys
 import time
 import datetime
 from decimal import Decimal
-from phoenixdb.calcite import common_pb2
+from phoenixdb.avatica.proto import common_pb2
 
 __all__ = [
     'Date', 'Time', 'Timestamp', 'DateFromTicks', 'TimeFromTicks', 'TimestampFromTicks',

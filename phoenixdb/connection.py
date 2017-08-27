@@ -16,7 +16,7 @@ import logging
 import uuid
 import weakref
 from phoenixdb import errors
-from phoenixdb.avatica import OPEN_CONNECTION_PROPERTIES
+from phoenixdb.avatica.client import OPEN_CONNECTION_PROPERTIES
 from phoenixdb.cursor import Cursor
 from phoenixdb.errors import ProgrammingError
 

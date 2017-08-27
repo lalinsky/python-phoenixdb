@@ -16,7 +16,7 @@ import logging
 import collections
 from phoenixdb.types import TypeHelper
 from phoenixdb.errors import ProgrammingError, InternalError
-from phoenixdb.calcite import common_pb2
+from phoenixdb.avatica.proto import common_pb2
 
 __all__ = ['Cursor', 'ColumnDescription', 'DictCursor']
 

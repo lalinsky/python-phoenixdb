@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 
-export CALCITE_VER=calcite-1.8.0
+AVATICA_VER=rel/avatica-1.10.0
+
+set -e
 
 rm -rf phoenixdb/calcite
 rm -rf calcite-tmp
 
-git init calcite-tmp
+mkdir calcite-tmp
 cd calcite-tmp
-git remote add origin https://github.com/apache/calcite/
-git config core.sparsecheckout true
-echo "avatica/core/src/main/protobuf/*" >> .git/info/sparse-checkout
-git pull --depth=1 origin $CALCITE_VER
+wget -O avatica.tar.gz https://github.com/apache/calcite-avatica/archive/$AVATICA_VER.tar.gz
+tar -x --strip-components=1 -f avatica.tar.gz
 
 cd ..
 mkdir -p phoenixdb/calcite
-protoc --proto_path=calcite-tmp/avatica/core/src/main/protobuf/ --python_out=phoenixdb/calcite calcite-tmp/avatica/core/src/main/protobuf/*.proto
+protoc --proto_path=calcite-tmp/core/src/main/protobuf/ --python_out=phoenixdb/calcite calcite-tmp/core/src/main/protobuf/*.proto
 sed -i 's/import common_pb2/from . import common_pb2/' phoenixdb/calcite/*_pb2.py
 
 rm -rf calcite-tmp

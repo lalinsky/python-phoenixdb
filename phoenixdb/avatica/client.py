@@ -21,7 +21,7 @@ import math
 import logging
 import time
 from phoenixdb import errors
-from phoenixdb.calcite import requests_pb2, common_pb2, responses_pb2
+from phoenixdb.avatica.proto import requests_pb2, common_pb2, responses_pb2
 
 try:
     import httplib

@@ -1,5 +1,5 @@
 import unittest
-from phoenixdb.avatica import parse_url, urlparse
+from phoenixdb.avatica.client import parse_url, urlparse
 
 
 class ParseUrlTest(unittest.TestCase):
