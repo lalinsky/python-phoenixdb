@@ -15,10 +15,11 @@ build build-env image:
 .build-phoenix-image: &build_phoenix_image
   stage: prepare
   script:
+    - JOB_NAME=($CI_JOB_NAME)
     - cd ci/phoenix
-    - docker build -t ${CI_REGISTRY_IMAGE}/phoenix:4.11 --build-arg HBASE_VERSION=$HBASE_VERSION --build-arg PHOENIX_VERSION=$PHOENIX_VERSION .
+    - docker build -t ${CI_REGISTRY_IMAGE}/phoenix:${JOB_NAME[2]} --build-arg HBASE_VERSION=$HBASE_VERSION --build-arg PHOENIX_VERSION=$PHOENIX_VERSION .
     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
-    - docker push $CI_REGISTRY_IMAGE/phoenix:4.11
+    - docker push $CI_REGISTRY_IMAGE/phoenix:${JOB_NAME[2]}
   tags:
     - docker-host
 
