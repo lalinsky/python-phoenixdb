@@ -18,7 +18,7 @@ from phoenixdb.types import TypeHelper
 from phoenixdb.errors import OperationalError, NotSupportedError, ProgrammingError, InternalError
 from phoenixdb.calcite import common_pb2
 
-__all__ = ['Cursor', 'ColumnDescription']
+__all__ = ['Cursor', 'ColumnDescription', 'DictCursor']
 
 logger = logging.getLogger(__name__)
 
@@ -257,7 +257,7 @@ class Cursor(object):
                 tmp_row.append(value)
         return tmp_row
 
-    def fetchone(self, doc=False):
+    def fetchone(self):
         if self._frame is None:
             raise ProgrammingError('no select statement was executed')
         if self._pos is None:
@@ -269,37 +269,28 @@ class Cursor(object):
             self._pos = None
             if not self._frame.done:
                 self._fetch_next_frame()
-        if doc:
-            return self.docResult(row=row)
-        else:
-            return row
+        return row
 
-    def fetchmany(self, size=None, doc=False):
+    def fetchmany(self, size=None):
         if size is None:
             size = self.arraysize
         rows = []
         while size > 0:
-            row = self.fetchone(doc=doc)
+            row = self.fetchone()
             if row is None:
                 break
             rows.append(row)
             size -= 1
         return rows
 
-    def fetchall(self, doc=False):
+    def fetchall(self):
         rows = []
         while True:
-            row = self.fetchone(doc=doc)
+            row = self.fetchone()
             if row is None:
                 break
             rows.append(row)
         return rows
-    
-    def docResult(self, row):
-        d = {}
-        for ind, val in enumerate(row):
-            d[self._signature.columns.__getitem__(ind).column_name] = val
-        return d
 
     def setinputsizes(self, sizes):
         pass
@@ -336,3 +327,14 @@ class Cursor(object):
         if self._frame is not None and self._pos is not None:
             return self._frame.offset + self._pos
         return self._pos
+
+
+class DictCursor(Cursor):
+    """A cursor which returns results as a dictionary"""
+
+    def _transform_row(self, row):
+        row = super(DictCursor, self)._transform_row(row)
+        d = {}
+        for ind, val in enumerate(row):
+            d[self._signature.columns[ind].column_name] = val
+        return d

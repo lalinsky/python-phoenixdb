@@ -56,6 +56,9 @@ def connect(url, max_retries=None, **kwargs):
     :param max_retries:
         The maximum number of retries in case there is a connection error.
 
+    :param cursor_factory:
+        If specified, the connection's :attr:`~phoenixdb.connection.Connection.cursor_factory` is set to it.
+
     :returns:
         :class:`~phoenixdb.connection.Connection` object.
     """
