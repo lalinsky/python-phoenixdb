@@ -21,11 +21,17 @@ class TypesTest(DatabaseTestCase):
             self.assertEqual(cursor.description[1].type_code, phoenixdb.NUMBER)
             self.assertEqual(cursor.fetchall(), [[1, 1], [2, None], [3, 1], [4, None], [5, min_value], [6, max_value]])
 
-            self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, {})".format(min_value - 1))
-            self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, {})".format(max_value + 1))
+            self.assertRaises(
+                self.conn.DatabaseError, cursor.execute,
+                "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, {})".format(min_value - 1))
+
+            self.assertRaises(
+                self.conn.DatabaseError, cursor.execute,
+                "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, {})".format(max_value + 1))
+
             # XXX The server silently truncates the values
-            #self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, ?)", [min_value - 1])
-            #self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, ?)", [max_value + 1])
+#            self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, ?)", [min_value - 1])
+#            self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, ?)", [max_value + 1])
 
     def test_integer(self):
         self.checkIntType("integer", -2147483648, 2147483647)
@@ -100,8 +106,12 @@ class TypesTest(DatabaseTestCase):
             self.assertEqual(rows[2][1], Decimal('33333.333'))
             self.assertEqual(rows[3][1], Decimal('33333.333'))
             self.assertEqual(rows[4][1], None)
-            self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, ?)", [Decimal('1234567890')])
-            self.assertRaises(self.conn.DatabaseError, cursor.execute, "UPSERT INTO phoenixdb_test_tbl1 VALUES (101, ?)", [Decimal('123456.789')])
+            self.assertRaises(
+                self.conn.DatabaseError, cursor.execute,
+                "UPSERT INTO phoenixdb_test_tbl1 VALUES (100, ?)", [Decimal('1234567890')])
+            self.assertRaises(
+                self.conn.DatabaseError, cursor.execute,
+                "UPSERT INTO phoenixdb_test_tbl1 VALUES (101, ?)", [Decimal('123456.789')])
 
     def test_boolean(self):
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val boolean")
@@ -175,7 +185,7 @@ class TypesTest(DatabaseTestCase):
         with self.conn.cursor() as cursor:
             cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, NULL)")
             cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (2, ?)", [None])
-            cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id") # raises NullPointerException on the server
+            cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")  # raises NullPointerException on the server
             self.assertEqual(cursor.fetchall(), [
                 [1, None],
                 [2, None],
@@ -293,10 +303,10 @@ class TypesTest(DatabaseTestCase):
     def test_array(self):
         self.createTable("phoenixdb_test_tbl1", "id integer primary key, val integer[]")
         with self.conn.cursor() as cursor:
-            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, ARRAY[1,2])")
-            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (2, ?)", [[2,3]])
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (1, ARRAY[1, 2])")
+            cursor.execute("UPSERT INTO phoenixdb_test_tbl1 VALUES (2, ?)", [[2, 3]])
             cursor.execute("SELECT id, val FROM phoenixdb_test_tbl1 ORDER BY id")
             self.assertEqual(cursor.fetchall(), [
-                [1, [1,2]],
-                [2, [2,3]],
+                [1, [1, 2]],
+                [2, [2, 3]],
             ])

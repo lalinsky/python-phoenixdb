@@ -77,21 +77,21 @@ def parse_url(url):
 
 # Defined in phoenix-core/src/main/java/org/apache/phoenix/exception/SQLExceptionCode.java
 SQLSTATE_ERROR_CLASSES = [
-    ('08', errors.OperationalError), # Connection Exception
-    ('22018', errors.IntegrityError), # Constraint violatioin.
-    ('22', errors.DataError), # Data Exception
-    ('23', errors.IntegrityError), # Constraint Violation
-    ('24', errors.InternalError), # Invalid Cursor State
-    ('25', errors.InternalError), # Invalid Transaction State
-    ('42', errors.ProgrammingError), # Syntax Error or Access Rule Violation
-    ('XLC', errors.OperationalError), # Execution exceptions
-    ('INT', errors.InternalError), # Phoenix internal error
+    ('08', errors.OperationalError),  # Connection Exception
+    ('22018', errors.IntegrityError),  # Constraint violatioin.
+    ('22', errors.DataError),  # Data Exception
+    ('23', errors.IntegrityError),  # Constraint Violation
+    ('24', errors.InternalError),  # Invalid Cursor State
+    ('25', errors.InternalError),  # Invalid Transaction State
+    ('42', errors.ProgrammingError),  # Syntax Error or Access Rule Violation
+    ('XLC', errors.OperationalError),  # Execution exceptions
+    ('INT', errors.InternalError),  # Phoenix internal error
 ]
 
 # Relevant properties as defined by https://calcite.apache.org/avatica/docs/client_reference.html
 OPEN_CONNECTION_PROPERTIES = (
-    'user', # User for the database connection
-    'password', # Password for the user
+    'user',  # User for the database connection
+    'password',  # Password for the user
 )
 
 
@@ -163,7 +163,7 @@ class AvaticaClient(object):
             logger.debug("Closing connection to %s:%s", self.url.hostname, self.url.port)
             try:
                 self.connection.close()
-            except httplib.HTTPException as e:
+            except httplib.HTTPException:
                 logger.warning("Error while closing connection", exc_info=True)
             self.connection = None
 

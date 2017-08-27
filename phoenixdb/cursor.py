@@ -15,7 +15,7 @@
 import logging
 import collections
 from phoenixdb.types import TypeHelper
-from phoenixdb.errors import OperationalError, NotSupportedError, ProgrammingError, InternalError
+from phoenixdb.errors import ProgrammingError, InternalError
 from phoenixdb.calcite import common_pb2
 
 __all__ = ['Cursor', 'ColumnDescription', 'DictCursor']
@@ -27,6 +27,7 @@ MAX_INT = 2 ** 64 - 1
 
 ColumnDescription = collections.namedtuple('ColumnDescription', 'name type_code display_size internal_size precision scale null_ok')
 """Named tuple for representing results from :attr:`Cursor.description`."""
+
 
 class Cursor(object):
     """Database cursor for executing queries and iterating over results.
@@ -154,7 +155,8 @@ class Cursor(object):
 
     def _fetch_next_frame(self):
         offset = self._frame.offset + len(self._frame.rows)
-        frame = self._connection._client.fetch(self._connection._id, self._id,
+        frame = self._connection._client.fetch(
+            self._connection._id, self._id,
             offset=offset, frame_max_size=self.itersize)
         self._set_frame(frame)
 
@@ -197,16 +199,18 @@ class Cursor(object):
         if parameters is None:
             if self._id is None:
                 self._set_id(self._connection._client.create_statement(self._connection._id))
-            results = self._connection._client.prepare_and_execute(self._connection._id, self._id,
+            results = self._connection._client.prepare_and_execute(
+                self._connection._id, self._id,
                 operation, first_frame_max_size=self.itersize)
             self._process_results(results)
         else:
-            statement = self._connection._client.prepare(self._connection._id,
-                operation)
+            statement = self._connection._client.prepare(
+                self._connection._id, operation)
             self._set_id(statement.id)
             self._set_signature(statement.signature)
 
-            results = self._connection._client.execute(self._connection._id, self._id,
+            results = self._connection._client.execute(
+                self._connection._id, self._id,
                 statement.signature, self._transform_parameters(parameters),
                 first_frame_max_size=self.itersize)
             self._process_results(results)
@@ -216,13 +220,14 @@ class Cursor(object):
             raise ProgrammingError('the cursor is already closed')
         self._updatecount = -1
         self._set_frame(None)
-        statement = self._connection._client.prepare(self._connection._id,
-            operation, max_rows_total=0)
+        statement = self._connection._client.prepare(
+            self._connection._id, operation, max_rows_total=0)
         self._set_id(statement.id)
         self._set_signature(statement.signature)
         for parameters in seq_of_parameters:
-            self._connection._client.execute(self._connection._id, self._id,
-            statement.signature, self._transform_parameters(parameters),
+            self._connection._client.execute(
+                self._connection._id, self._id,
+                statement.signature, self._transform_parameters(parameters),
                 first_frame_max_size=0)
 
     def _transform_row(self, row):
@@ -300,7 +305,8 @@ class Cursor(object):
 
     @property
     def connection(self):
-        """Read-only attribute providing access to the :class:`Connection <phoenixdb.connection.Connection>` object this cursor was created from."""
+        """Read-only attribute providing access to the :class:`Connection <phoenixdb.connection.Connection>`
+        object this cursor was created from."""
         return self._connection
 
     @property

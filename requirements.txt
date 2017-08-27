@@ -2,3 +2,4 @@
 nose
 protobuf>=3.0.0
 sphinx
+flake8

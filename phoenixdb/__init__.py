@@ -15,8 +15,8 @@
 from phoenixdb import errors, types
 from phoenixdb.avatica import AvaticaClient
 from phoenixdb.connection import Connection
-from phoenixdb.errors import *
-from phoenixdb.types import *
+from phoenixdb.errors import *  # noqa: F401,F403
+from phoenixdb.types import *  # noqa: F401,F403
 
 __all__ = ['connect', 'apilevel', 'threadsafety', 'paramstyle'] + types.__all__ + errors.__all__
 

@@ -13,8 +13,11 @@ class PhoenixDatabaseAPI20Test(dbapi20.DatabaseAPI20Test):
     ddl2 = 'create table %sbarflys (name varchar(20) primary key, drink varchar(30))' % dbapi20.DatabaseAPI20Test.table_prefix
     insert = 'upsert'
 
-    def test_nextset(self): pass
-    def test_setoutputsize(self): pass
+    def test_nextset(self):
+        pass
+
+    def test_setoutputsize(self):
+        pass
 
     def _connect(self):
         con = dbapi20.DatabaseAPI20Test._connect(self)
@@ -29,9 +32,9 @@ class PhoenixDatabaseAPI20Test(dbapi20.DatabaseAPI20Test):
             cur.execute("%s into %sbarflys values ('a', NULL)" % (self.insert, self.table_prefix))
             cur.execute('select drink from %sbarflys' % self.table_prefix)
             r = cur.fetchall()
-            self.assertEqual(len(r),1)
-            self.assertEqual(len(r[0]),1)
-            self.assertEqual(r[0][0],None,'NULL value not returned as None')
+            self.assertEqual(len(r), 1)
+            self.assertEqual(len(r[0]), 1)
+            self.assertEqual(r[0][0], None, 'NULL value not returned as None')
         finally:
             con.close()
 
@@ -58,8 +61,8 @@ class PhoenixDatabaseAPI20Test(dbapi20.DatabaseAPI20Test):
         con = self._connect()
         try:
             cur = con.cursor()
-            if hasattr(cur,'__iter__'):
-                self.assertIs(cur,iter(cur))
+            if hasattr(cur, '__iter__'):
+                self.assertIs(cur, iter(cur))
         finally:
             con.close()
 
@@ -68,41 +71,37 @@ class PhoenixDatabaseAPI20Test(dbapi20.DatabaseAPI20Test):
         con = self._connect()
         try:
             cur = con.cursor()
-            if not hasattr(cur,'next'):
+            if not hasattr(cur, 'next'):
                 return
 
             # cursor.next should raise an Error if called before
             # executing a select-type query
-            self.assertRaises(self.driver.Error,cur.next)
+            self.assertRaises(self.driver.Error, cur.next)
 
             # cursor.next should raise an Error if called after
             # executing a query that cannnot return rows
             self.executeDDL1(cur)
-            self.assertRaises(self.driver.Error,cur.next)
+            self.assertRaises(self.driver.Error, cur.next)
 
             # cursor.next should return None if a query retrieves '
             # no rows
             cur.execute('select name from %sbooze' % self.table_prefix)
-            self.assertRaises(StopIteration,cur.next)
-            self.failUnless(cur.rowcount in (-1,0))
+            self.assertRaises(StopIteration, cur.next)
+            self.failUnless(cur.rowcount in (-1, 0))
 
             # cursor.next should raise an Error if called after
             # executing a query that cannnot return rows
             cur.execute("%s into %sbooze values ('Victoria Bitter')" % (
                 self.insert, self.table_prefix
                 ))
-            self.assertRaises(self.driver.Error,cur.next)
+            self.assertRaises(self.driver.Error, cur.next)
 
             cur.execute('select name from %sbooze' % self.table_prefix)
             r = cur.next()
-            self.assertEqual(len(r),1,
-                'cursor.next should have retrieved a row with one column'
-                )
-            self.assertEqual(r[0],'Victoria Bitter',
-                'cursor.next retrieved incorrect data'
-                )
+            self.assertEqual(len(r), 1, 'cursor.next should have retrieved a row with one column')
+            self.assertEqual(r[0], 'Victoria Bitter', 'cursor.next retrieved incorrect data')
             # cursor.next should raise StopIteration if no more rows available
-            self.assertRaises(StopIteration,cur.next)
-            self.failUnless(cur.rowcount in (-1,1))
+            self.assertRaises(StopIteration, cur.next)
+            self.failUnless(cur.rowcount in (-1, 1))
         finally:
             con.close()

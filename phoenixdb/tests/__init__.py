@@ -7,7 +7,7 @@ TEST_DB_URL = os.environ.get('PHOENIXDB_TEST_DB_URL')
 
 @unittest.skipIf(TEST_DB_URL is None, "these tests require the PHOENIXDB_TEST_DB_URL environment variable set to a clean database")
 class DatabaseTestCase(unittest.TestCase):
-    
+
     def setUp(self):
         self.conn = phoenixdb.connect(TEST_DB_URL, autocommit=True)
         self.cleanup_tables = []

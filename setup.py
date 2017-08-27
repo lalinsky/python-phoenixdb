@@ -8,9 +8,11 @@ try:
 except ImportError:
     pass
 
+
 def readme():
     with open('README.rst') as f:
         return f.read()
+
 
 version = "0.7"
 

@@ -18,7 +18,7 @@ import weakref
 from phoenixdb import errors
 from phoenixdb.avatica import OPEN_CONNECTION_PROPERTIES
 from phoenixdb.cursor import Cursor
-from phoenixdb.errors import OperationalError, NotSupportedError, ProgrammingError
+from phoenixdb.errors import ProgrammingError
 
 __all__ = ['Connection']
 
@@ -174,7 +174,7 @@ class Connection(object):
     def transactionisolation(self):
         return self._transactionisolation
 
-    @readonly.setter
+    @transactionisolation.setter
     def transactionisolation(self, value):
         if self._closed:
             raise ProgrammingError('the connection is already closed')

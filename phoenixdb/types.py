@@ -113,7 +113,10 @@ STRING = ColumnType(['VARCHAR', 'CHAR'])
 BINARY = ColumnType(['BINARY', 'VARBINARY'])
 """Type object that can be used to describe (long) binary columns."""
 
-NUMBER = ColumnType(['INTEGER', 'UNSIGNED_INT', 'BIGINT', 'UNSIGNED_LONG', 'TINYINT', 'UNSIGNED_TINYINT', 'SMALLINT', 'UNSIGNED_SMALLINT', 'FLOAT', 'UNSIGNED_FLOAT', 'DOUBLE', 'UNSIGNED_DOUBLE', 'DECIMAL'])
+NUMBER = ColumnType([
+    'INTEGER', 'UNSIGNED_INT', 'BIGINT', 'UNSIGNED_LONG', 'TINYINT', 'UNSIGNED_TINYINT',
+    'SMALLINT', 'UNSIGNED_SMALLINT', 'FLOAT', 'UNSIGNED_FLOAT', 'DOUBLE', 'UNSIGNED_DOUBLE', 'DECIMAL'
+])
 """Type object that can be used to describe numeric columns."""
 
 DATETIME = ColumnType(['TIME', 'DATE', 'TIMESTAMP', 'UNSIGNED_TIME', 'UNSIGNED_DATE', 'UNSIGNED_TIMESTAMP'])
@@ -157,7 +160,7 @@ JAVA_CLASSES = {
 }
 """Groups of Java classes."""
 
-JAVA_CLASSES_MAP = dict( (v[0], (k, v[1], v[2], v[3])) for k in JAVA_CLASSES for v in JAVA_CLASSES[k] )
+JAVA_CLASSES_MAP = dict((v[0], (k, v[1], v[2], v[3])) for k in JAVA_CLASSES for v in JAVA_CLASSES[k])
 """Flips the available types to allow for faster lookup by Java class.
 
 This mapping should be structured as:
