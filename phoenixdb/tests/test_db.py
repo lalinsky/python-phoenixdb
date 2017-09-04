@@ -1,6 +1,7 @@
 import unittest
 import phoenixdb
 import phoenixdb.cursor
+from phoenixdb.errors import InternalError
 from phoenixdb.tests import TEST_DB_URL
 
 
@@ -63,3 +64,21 @@ class PhoenixDatabaseTest(unittest.TestCase):
 
         with db.cursor(cursor_factory=phoenixdb.cursor.DictCursor) as cursor:
             self._check_dict_cursor(cursor)
+
+    def test_schema(self):
+        db = phoenixdb.connect(TEST_DB_URL, autocommit=True)
+        self.addCleanup(db.close)
+
+        with db.cursor() as cursor:
+            try:
+                cursor.execute("CREATE SCHEMA IF NOT EXISTS test_schema")
+            except InternalError as e:
+                if "phoenix.schema.isNamespaceMappingEnabled" in e.message:
+                    self.skipTest(e.message)
+                raise
+
+            cursor.execute("DROP TABLE IF EXISTS test_schema.test")
+            cursor.execute("CREATE TABLE test_schema.test (id INTEGER PRIMARY KEY, text VARCHAR)")
+            cursor.execute("UPSERT INTO test_schema.test VALUES (?, ?)", [1, 'text 1'])
+            cursor.execute("SELECT * FROM test_schema.test ORDER BY id")
+            self.assertEqual(cursor.fetchall(), [[1, 'text 1']])
