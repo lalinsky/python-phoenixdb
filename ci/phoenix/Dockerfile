@@ -21,7 +21,10 @@ RUN wget --no-verbose -O phoenix.tar.gz "$PHOENIX_URL" && \
 RUN ln -sv /opt/phoenix/phoenix-*-server.jar /opt/hbase/lib/
 
 ADD hbase-site.xml /opt/hbase/conf/hbase-site.xml
-ADD hbase-site.xml /opt/phoenix/bin/hbase-site.xml
+
+ENV HBASE_CONF_DIR /opt/hbase/conf
+ENV HBASE_CP /opt/hbase/lib
+ENV HBASE_HOME /opt/hbase
 
 EXPOSE 8765
 
