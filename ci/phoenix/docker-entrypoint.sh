@@ -5,7 +5,7 @@ pids=()
 /opt/hbase/bin/hbase-daemon.sh foreground_start master &
 pids+=($!)
 
-/opt/phoenix/bin/queryserver.py &
+/opt/phoenix/bin/queryserver.py -Dphoenix.schema.isNamespaceMappingEnabled=true &
 pids+=($!)
 
 cleanup() {
