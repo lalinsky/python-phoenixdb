@@ -11,8 +11,6 @@ RUN wget --no-verbose -O hbase.tar.gz "$HBASE_URL" && \
     tar xf hbase.tar.gz --strip-components=1 -C /opt/hbase && \
     rm hbase.tar.gz
 
-ADD hbase-site.xml /opt/hbase/conf/hbase-site.xml
-
 ENV PHOENIX_URL http://www.apache.org/dyn/closer.cgi?action=download&filename=phoenix/apache-phoenix-$PHOENIX_VERSION/bin/apache-phoenix-$PHOENIX_VERSION-bin.tar.gz
 
 RUN wget --no-verbose -O phoenix.tar.gz "$PHOENIX_URL" && \
@@ -21,6 +19,9 @@ RUN wget --no-verbose -O phoenix.tar.gz "$PHOENIX_URL" && \
     rm phoenix.tar.gz
 
 RUN ln -sv /opt/phoenix/phoenix-*-server.jar /opt/hbase/lib/
+
+ADD hbase-site.xml /opt/hbase/conf/hbase-site.xml
+ADD hbase-site.xml /opt/phoenix/bin/hbase-site.xml
 
 EXPOSE 8765
 
