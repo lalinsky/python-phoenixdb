@@ -1,6 +1,14 @@
 Phoenix database adapter for Python
 ===================================
 
+.. image:: https://code.oxygene.sk/lukas/python-phoenixdb/badges/master/pipeline.svg
+    :target: https://code.oxygene.sk/lukas/python-phoenixdb/commits/master
+    :alt: Build Status
+
+.. image:: https://readthedocs.org/projects/python-phoenixdb/badge/?version=latest
+    :target: http://python-phoenixdb.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
 ``phoenixdb`` is a Python library for accessing the
 `Phoenix SQL database <http://phoenix.apache.org/>`_
 using the
