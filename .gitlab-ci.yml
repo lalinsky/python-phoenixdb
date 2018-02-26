@@ -25,6 +25,12 @@ build build-env image:
   tags:
     - docker-host
 
+build phoenix 5.0.0-alpha-HBase-2.0 image:
+  <<: *build_phoenix_image
+  variables:
+    PHOENIX_VERSION: 5.0.0-alpha-HBase-2.0
+    HBASE_VERSION: 2.0.0-beta-1
+
 build phoenix 4.13 image:
   <<: *build_phoenix_image
   variables:
@@ -73,6 +79,12 @@ build phoenix 4.8 image:
       - cache/
   tags:
     - docker
+
+test phoenix 5.0.0-alpha-HBase-2.0:
+  <<: *test
+  services:
+    - name: $CI_REGISTRY_IMAGE/phoenix:5.0.0-alpha-HBase-2.0
+      alias: phoenix
 
 test phoenix 4.13:
   <<: *test
