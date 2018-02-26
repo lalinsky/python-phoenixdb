@@ -4,7 +4,7 @@ ARG HBASE_VERSION
 ARG PHOENIX_VERSION
 ARG PHOENIX_NAME=apache-phoenix
 
-ENV HBASE_URL http://www.apache.org/dyn/closer.cgi?action=download&filename=hbase/$HBASE_VERSION/hbase-$HBASE_VERSION-bin.tar.gz
+ENV HBASE_URL http://www.apache.org/dyn/closer.cgi?action=download&filename=hbase/$HBASE_DIR/hbase-$HBASE_VERSION-bin.tar.gz
 
 RUN wget --no-verbose -O hbase.tar.gz "$HBASE_URL" && \
     mkdir /opt/hbase && \
