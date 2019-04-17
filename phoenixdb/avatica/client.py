@@ -217,7 +217,7 @@ class AvaticaClient(object):
         find_atmark = self.url.netloc.find('@')
         if find_atmark >= 0:
             authstr = unquote(self.url.netloc[:find_atmark])
-            headers['Authorization'] = 'Basic ' + base64.b64encode(authstr)
+            headers['Authorization'] = 'Basic ' + base64.b64encode(authstr.encode()).decode()
 
         response = self._post_request(body, headers)
         response_body = response.read()
