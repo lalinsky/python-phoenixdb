@@ -22,11 +22,17 @@ import logging
 import time
 from phoenixdb import errors
 from phoenixdb.avatica.proto import requests_pb2, common_pb2, responses_pb2
+import base64
 
 try:
     import httplib
 except ImportError:
     import http.client as httplib
+
+try:
+    from urllib import unquote  # Python 2.X
+except ImportError:
+    from urllib.parse import unquote  # Python 3+
 
 try:
     import urlparse
@@ -152,7 +158,12 @@ class AvaticaClient(object):
         """Opens a HTTP connection to the RPC server."""
         logger.debug("Opening connection to %s:%s", self.url.hostname, self.url.port)
         try:
-            self.connection = httplib.HTTPConnection(self.url.hostname, self.url.port)
+            connectionClass = None
+            if self.url.scheme == 'https':
+                connectionClass = httplib.HTTPSConnection
+            else:
+                connectionClass = httplib.HTTPConnection
+            self.connection = connectionClass(self.url.hostname, self.url.port)
             self.connection.connect()
         except (httplib.HTTPException, socket.error) as e:
             raise errors.InterfaceError('Unable to connect to the specified service', e)
@@ -203,6 +214,10 @@ class AvaticaClient(object):
         message.wrapped_message = request_data.SerializeToString()
         body = message.SerializeToString()
         headers = {'content-type': 'application/x-google-protobuf'}
+        find_atmark = self.url.netloc.find('@')
+        if find_atmark >= 0:
+            authstr = unquote(self.url.netloc[:find_atmark])
+            headers['Authorization'] = 'Basic ' + base64.b64encode(authstr.encode()).decode()
 
         response = self._post_request(body, headers)
         response_body = response.read()
