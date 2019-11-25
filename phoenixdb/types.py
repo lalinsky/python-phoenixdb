@@ -85,6 +85,8 @@ def datetime_from_java_sql_timestamp(n):
 
 
 def datetime_to_java_sql_timestamp(d):
+    if d.tzinfo:
+        d = d.replace(tzinfo=None) - d.utcoffset()
     td = d - datetime.datetime(1970, 1, 1)
     return td.microseconds // 1000 + (td.seconds + td.days * 24 * 3600) * 1000
 
